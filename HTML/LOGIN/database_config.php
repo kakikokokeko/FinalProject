@@ -33,14 +33,36 @@ try {
             category_type VARCHAR(50) NOT NULL
         )",
         
+        "INSERT IGNORE INTO Category (category_code, category_type) VALUES 
+        ('CAT001', 'Chicken'),
+        ('CAT002', 'Beef'),
+        ('CAT003', 'Pork'),
+        ('CAT004', 'Processed'),
+        ('CAT005', 'Sari-sari')",
+        
         "CREATE TABLE IF NOT EXISTS Products (
             prod_code VARCHAR(20) PRIMARY KEY,
             prod_name VARCHAR(100) NOT NULL,
             prod_price DECIMAL(10,2) NOT NULL,
             stock_atty INT NOT NULL,
+            stock_unit ENUM('kg', 'qty') NOT NULL,
             category_code VARCHAR(20) NOT NULL,
+            image_path VARCHAR(255),
             FOREIGN KEY (category_code) REFERENCES Category(category_code)
         )",
+        
+        "CREATE TABLE IF NOT EXISTS ProductCounter (
+            category_code VARCHAR(20) PRIMARY KEY,
+            next_value INT NOT NULL DEFAULT 0,
+            FOREIGN KEY (category_code) REFERENCES Category(category_code)
+        )",
+        
+        "INSERT IGNORE INTO ProductCounter (category_code, next_value) VALUES 
+        ('CAT001', 1000),
+        ('CAT002', 2000),
+        ('CAT003', 3000),
+        ('CAT004', 4000),
+        ('CAT005', 5000)",
         
         "CREATE TABLE IF NOT EXISTS Sale (
             sale_id INT AUTO_INCREMENT PRIMARY KEY,
