@@ -1,0 +1,285 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+html, body {
+    height: 100%;
+    width: 100%;
+}
+
+
+body {
+    background-color: #FFFFFF;
+    font-family: 'Poppins', sans-serif;
+}
+
+
+.main-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+
+.rightBar {
+  background-color: #991b1b;
+  width: 100%;
+  padding: 15px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  order: 1;
+}
+
+.left-content {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  order: 2;
+  overflow-y: auto;
+}
+
+
+.logo {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    margin-bottom: 5px;
+}
+
+
+#wrongbttn {
+    color: white;
+    font-weight: lighter;
+    font-size: 0.7rem;
+    text-align: center;
+    width: 90%;
+     margin: 0;
+}
+
+
+@media 
+(min-width: 768px) {
+.main-container {
+    flex-direction: row-reverse;
+  }
+  
+  
+.left-content {
+    width: 65%;
+    order: 1;
+}
+      
+  
+.rightBar {
+    width: 35%;
+    height: 100%;
+    padding: 0;
+    position: relative;
+    order: 2;
+}
+    
+  
+.logo {
+    width: clamp(120px, 20vw, 200px);
+    height: clamp(120px, 20vw, 200px);
+    position: absolute;
+    top: 20vh;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+            
+#wrongbttn {
+    position: absolute;
+    bottom: clamp(40px, 8vh, 80px);
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: clamp(0.4rem, 1.2vw, 0.9rem);
+  }
+}
+
+
+.login-form {
+    width: 100%;
+    max-width: 380px;
+    padding: 0 10px;
+}
+
+
+.login-form h1 {
+    font-size: clamp(24px, 3vw, 30px);
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+
+.form-group {
+    margin-bottom: 20px;
+    margin-top: 2vw;
+    position: relative;
+}
+
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+
+
+.password-wrapper {
+    position: relative;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #7f8c8d;
+    font-size: 18px;
+}
+
+.toggle-password:hover {
+    color: #555;
+}
+
+
+.form-group input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+}
+
+
+.form-group input:focus {
+    border-color: #ffdede;
+    outline: none;
+}
+
+
+.show-password {
+    display: flex;
+    align-items: center;
+    margin-top: 8px;
+}
+
+
+.show-password input[type="checkbox"] {
+    width: auto;
+    margin-right: 8px;
+}
+
+
+.show-password label {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 0;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+
+.forgot-password {
+    text-align: center;
+    margin-bottom: 25px;
+    margin-top: 1vw;
+}
+
+
+.forgot-password a {
+    color: #000000;
+    font-size: 13px;
+    text-decoration: none;
+}
+
+
+.forgot-password a:hover {
+    text-decoration: underline;
+    color: #F76E6C;
+}
+
+
+.button-container{
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+    text-align: center;
+    justify-items: center;
+    align-items: center;
+}
+
+.signin-btn, #cancel{
+    width: 50%;
+    padding: 12px;
+    background-color: #991b1b;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    margin-top: 2vw;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+
+.cancel-btn{
+    background-color: transparent;
+    border-color: transparent;
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+#cancel {
+    width: 50%;
+    padding: 9.9px;
+    background-color: #991b1b;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    margin-top: 2vw;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+
+.signin-btn:hover {
+    background-color: #d54242;
+}
+
+#cancel:hover {
+    background-color: #d54242;
+}
+
+#goTo {
+    color: white;
+    text-decoration: none;
+}
+
+
+#goTo:hover {
+    color: rgb(214, 210, 210);
+    text-decoration: underline;
+}

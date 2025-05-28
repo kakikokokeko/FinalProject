@@ -1,0 +1,392 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/*---------------------------------------------------LAYOUT-----------------------------------------------------------------------------*/
+
+
+html, body {
+    height: 100%;
+    width: 100%;
+}
+
+body {
+    background-color: #F0F0F0;
+    font-family: 'Poppins', sans-serif;
+}
+
+.main-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/*---------------------------------------------------HEADER-----------------------------------------------------------------------------*/
+
+.header{
+    background-color: #991b1b;
+    width: 100%;
+    padding: 0 15px;
+    display: flex;
+    flex-direction: row;
+    justify-content: left;
+    height: 90px;
+}
+
+.main-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+
+
+.sidebar-container{
+    background-color: #ECDCBF;
+    width: 250px;
+    height: 100%;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.content-area {
+    flex: 1;
+    height: calc(100vh - 90px);
+}
+
+.logo {
+    width: 70px;
+    height: 70px;
+    object-fit: contain;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    margin-left: 13px;
+}
+
+.dashboard{
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    justify-content: center;
+    margin-left: 10rem;
+    align-items: center;
+}
+
+.dashLogo{
+    position: relative;
+    max-width: 100%;
+    overflow: hidden;
+    max-height: 100%;
+    width: 50px;
+    height: 40px;
+}
+
+#Dashboard {
+    color: white;
+    font-weight: lighter;
+    font-size: 1.5rem;
+    width: 90%;
+    margin: 0;
+}
+
+.profile{
+    display: flex;
+    flex-direction: row;
+    gap: .5rem;
+    justify-content: center;
+    margin-left: auto;
+    margin-right: 20px;
+    align-items: center;
+}
+
+.ProfLogo{
+    position: relative;
+    max-width: 100%;
+    overflow: hidden;
+    max-height: 100%;
+    width: 45px;
+    height: 34px;
+}
+
+#Profile {
+    color: white;
+    font-weight: lighter;
+    font-size: 1.5rem;
+    width: 90%;
+    margin: 0;
+}
+
+
+/*---------------------------------------------------SIDEBAR-----------------------------------------------------------------------------*/
+
+
+.sidebar-item, .sidebar-itemActive{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 16px;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.sidebarLogo {
+    width: 30px;
+    height: 25px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.bttn {
+    color: black;
+    font-weight: 400;
+    font-size: 1.2rem;
+    background-color: transparent;
+    border: none;
+    text-align: left;
+    padding: 0;
+    margin: 0;
+    white-space: nowrap;
+    flex-grow: 1;
+}
+
+.sidebar-item {
+    line-height: 1;
+}
+
+.sidebar-item:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+
+.sidebar-itemActive{
+    display: flex;
+    align-items: center;
+    background-color: #F0F0F0;
+    gap: 12px;
+    transition: all 0.3s ease;
+    border-radius: 25px 0 0 25px;
+    padding: 15px 16px;
+    width: 100%;
+}
+
+.sidebar-item.active {
+    background-color: rgba(153,27,27,0.1);
+}
+
+.sidebar-item.active .bttn {
+    font-weight: 600;
+}
+
+.logoutbutton{
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    width: 100%;
+    margin-top: clamp(90px, 18vw, 170px);
+    padding: 0 5%;
+}
+
+.logbttn img {
+    margin-right: 8px;
+    width: clamp(16px, 1.5vw, 24px);
+    vertical-align: middle;
+}
+
+.logbttn {
+    font-family: 'Poppins', sans-serif;
+    color: white;
+    background-color: #991b1b;
+    padding: clamp(6px, 1vw, 12px) clamp(15px, 3vw, 45px);
+    font-weight: bold;
+    font-size: clamp(0.9rem, 1.3vw, 1.1rem);
+    border: none;
+    font-weight: lighter;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    min-width: 120px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.logbttn:hover {
+    background-color: #d54242;
+}
+
+/*---------------------------------------------------MAIN CONTENT-----------------------------------------------------------------------------*/
+
+.content-area {
+    padding: 1vw;
+    height: calc(100vh - 90px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.account-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 1vw;
+    padding: 2vw;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+hr{
+    margin-bottom: 1vw;
+    margin-top: 1vw;
+}
+
+.account-info.no-scroll {
+    overflow: hidden;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5vw;
+    flex-grow: 1;
+}
+
+h1 {
+    color: #333;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.4rem;
+    margin-bottom: 1vw;
+}
+
+
+.info-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-group.full-width {
+    grid-column: span 2;
+}
+
+.info-group label {
+    font-size: 0.9em;
+    color: #777;
+    margin-bottom: 0.5vw;
+}
+
+.info-value {
+    padding: 0.8vw;
+    border: 1px solid #ddd;
+    border-radius: 0.5vw;
+    font-size: 1em;
+    background: #f9f9f9;
+}
+
+
+/*---------------------------------------------------SIDEBAR RIGHT-----------------------------------------------------------------------------*/
+
+
+.sidebar-containerRight {
+    display: flex;
+    justify-content: center;
+    background-color: #ECDCBF;
+    width: 20%;
+    height: 100%;
+}
+
+.search-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding-top: 3vh;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    background-color: transparent;
+    border-radius: 10px;
+    height: 7%;
+    padding: 5px 10px;
+    width: 80%;
+    border: 1px solid black;
+    margin-bottom: 1vh;
+}
+
+.search-bar img {
+    height: 4vh;
+    width: 2vw;
+    margin-right: 8px;
+}
+
+.search-bar input {
+    border: none;
+    width: 100%;
+    outline: none;
+    background: transparent;
+}
+
+.searchbutton {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: .5vw;
+}
+
+.Searchbttn:hover{
+    background-color: #d54242;
+}
+
+.Searchbttn {
+    font-family: 'Poppins', sans-serif;
+    color: white;
+    background-color: #991b1b;
+    padding: clamp(5px, .8vw, 10px) clamp(13px, 2vw, 40px);
+    font-size: clamp(0.8rem, 1.1vw, 1rem);
+    border: none;
+    font-weight: lighter;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.accounts_button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 15vw;
+    gap: 1.3vw;
+    width: 100%;
+}
+
+.acc-button {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.Accountbttn {
+    font-family: 'Poppins', sans-serif;
+    color: white;
+    background-color: #991b1b;
+    padding: clamp(5px, .8vw, 10px) clamp(17px, 3vw, 50px);
+    font-size: clamp(0.8rem, 1.1vw, 1rem);
+    border: none;
+    font-weight: lighter;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 200px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.Accountbttn:hover{
+    background-color: #d54242;
+}

@@ -1,0 +1,292 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    width: 100%;
+}
+
+body {
+    background-color: #F0F0F0;
+    font-family: 'Poppins', sans-serif;
+}
+
+
+.main-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.header{
+    background-color: #991b1b;
+    width: 100%;
+    padding: 0 15px;
+    display: flex;
+    flex-direction: row;
+    justify-content: left;
+    height: 90px;
+}
+
+.main-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.sidebar-container{
+    background-color: #ECDCBF;
+    width: 250px;
+    height: 100%;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.content-area {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    height: calc(100vh - 90px);
+}
+
+.logo {
+    width: 70px;
+    height: 70px;
+    object-fit: contain;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    margin-left: 13px;
+}
+
+.dashboard{
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    justify-content: center;
+    margin-left: 10rem;
+    align-items: center;
+}
+
+.dashLogo{
+    position: relative;
+    max-width: 100%;
+    overflow: hidden;
+    max-height: 100%;
+    width: 50px;
+    height: 40px;
+}
+
+#Dashboard {
+    color: white;
+    font-weight: lighter;
+    font-size: 1.5rem;
+    width: 90%;
+    margin: 0;
+}
+
+.profile{
+    display: flex;
+    flex-direction: row;
+    gap: .5rem;
+    justify-content: center;
+    margin-left: auto;
+    margin-right: 20px;
+    align-items: center;
+}
+
+.ProfLogo{
+    position: relative;
+    max-width: 100%;
+    overflow: hidden;
+    max-height: 100%;
+    width: 45px;
+    height: 34px;
+}
+
+#Profile {
+    color: white;
+    font-weight: lighter;
+    font-size: 1.5rem;
+    width: 90%;
+    margin: 0;
+}
+
+.sidebar-item, .sidebar-itemActive{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 16px;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.sidebarLogo {
+    width: 30px;
+    height: 25px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.bttn {
+    color: black;
+    font-weight: 400;
+    font-size: 1.2rem;
+    background-color: transparent;
+    border: none;
+    text-align: left;
+    padding: 0;
+    margin: 0;
+    white-space: nowrap;
+    flex-grow: 1;
+    cursor: pointer;
+}
+
+.sidebar-item {
+    height: 10vh;
+    cursor: pointer;
+}
+
+.sidebar-item:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+
+.sidebar-itemActive{
+    display: flex;
+    align-items: center;
+    background-color: #F0F0F0;
+    gap: 12px;
+    transition: all 0.3s ease;
+    border-radius: 25px 0 0 25px;
+    padding: 15px 16px;
+    width: 100%;
+    height: 10vh;
+}
+
+.sidebar-item.active {
+    background-color: rgba(153,27,27,0.1);
+}
+
+.sidebar-item.active .bttn {
+    font-weight: 600;
+}
+
+.logoutbutton{
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    width: 100%;
+    margin-top: clamp(90px, 18vw, 170px);
+    padding: 0 5%;
+}
+
+.logbttn img {
+    margin-right: 8px;
+    width: clamp(16px, 1.5vw, 24px);
+    vertical-align: middle;
+}
+
+.logbttn {
+    font-family: 'Poppins', sans-serif;
+    color: white;
+    background-color: #991b1b;
+    padding: clamp(6px, 1vw, 12px) clamp(15px, 3vw, 45px);
+    font-weight: bold;
+    font-size: clamp(0.9rem, 1.3vw, 1.1rem);
+    border: none;
+    font-weight: lighter;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    min-width: 120px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.logbttn:hover {
+    background-color: #d54242;
+}
+
+.tables {
+    margin-top: 10px;
+    padding: 10px;
+    display: flex;
+    justify-content: center;
+}
+
+.AccTable {
+    font-family: 'Poppins', sans-serif;
+    width: 100%;
+    max-width: 900px;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.AccTable h1 {
+    color: #333;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.AccTable table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.AccTable th, .AccTable td {
+    border: 1px solid #BEBEBE;
+    padding: 12px 15px;
+    text-align: center;
+}
+
+.AccTable th {
+    color: black;
+    font-weight: 500;
+}
+
+.AccTable tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.dashContent {
+    display: flex;
+    flex-direction: row;
+    width: 750px;
+    height: 90px;
+    gap: 130px;
+    margin: 20px auto;
+}
+
+.rectangle-div {
+    background-color: white;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    padding: 10px;
+}
+
+.accLogo {
+    position: absolute;
+    top: 20px;
+    right: 0px;
+    width: 65px;
+    height: 50px;
+    object-fit: contain;
+}
+
+.info {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    color: #757575;
+    font-size: 1.2rem;
+    margin: 0;
+    padding: 0;
+}
