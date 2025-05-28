@@ -1,3 +1,28 @@
+<?php
+session_start();
+include("../../HTML/LOGIN/database_config.php");
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id']) || $_SESSION['position'] !== 'Cashier') {
+    header('Location: ../LOGIN/loginCashier.php');
+    exit;
+}
+
+// Fetch all products from database
+try {
+    $pdo = new PDO('mysql:host=localhost;dbname=DaMeatUp', 'root', '');
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
+    $stmt = $pdo->query("SELECT p.*, c.category_type 
+                         FROM Products p 
+                         LEFT JOIN Category c ON p.category_code = c.category_code 
+                         ORDER BY p.prod_name");
+    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch(PDOException $e) {
+    echo "<script>alert('Error loading products: " . addslashes($e->getMessage()) . "');</script>";
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,30 +36,22 @@
     <link rel="icon" href="../../pics/logo.png" sizes="any">
 </head>
 <body>
-<?php
-include("../../HTML/LOGIN/database_config.php");
-?>
-
     <div class="container">
-
       <div class="Header">
-
         <div class="image_container">
           <img src="../../pics/logo.png" alt="Logo" id="logo">
         </div>
 
         <div class="text_container">
-          <h1>Welcome, <span>Employee</span>!</h1>
+          <h1>Welcome, <span><?php echo htmlspecialchars($_SESSION['name']); ?></span>!</h1>
           <h3>DaMeatUp POS System</h3>
         </div>
-
 
         <div class="logout_container">
           <button id="button" >
             <img src="../../pics/cashier_icons/logout.png" alt="Logout Icon" id="logout" onclick="show()">
           </button>
         </div>
-
       </div>
 
       <div class="Sidebar">
@@ -44,19 +61,16 @@ include("../../HTML/LOGIN/database_config.php");
               <p>Item name</p>
               <p>Qty.</p>
               <p>Price</p>
-
           </div>
           <hr>
 
           <div class="orders_container">
-
           </div>
 
           <div class="Sidebar-bottom">
               <div class="total">
                   <p id="TOTAL">TOTAL:</p>
                   <p>CASH:</p>
-
                   <hr>
                   <p>CHANGE:</p>
               </div>
@@ -88,19 +102,15 @@ include("../../HTML/LOGIN/database_config.php");
                           <p class="button_name">Delete</p>
                       </div>
                   </div>
-
-
-
               </div>
-
           </div>
-
       </div>
 
       <div class="Content">
           <div class="Category">
               <p>Category</p>
               <div class="items">
+                  <button onclick="selectCategory(this, 'all')" class="active">All</button>
                   <button onclick="selectCategory(this, 'chicken')">Chicken</button>
                   <button onclick="selectCategory(this, 'beef')">Beef</button>
                   <button onclick="selectCategory(this, 'pork')">Pork</button>
@@ -112,7 +122,7 @@ include("../../HTML/LOGIN/database_config.php");
         <div class="Items">
             <div class="top">
                 <div class="search_bar">
-                    <input type="text" id="searchInput" placeholder="Search items">
+                    <input type="text" id="searchInput" placeholder="Search items" onkeyup="filterProducts()">
                     <button id="searchButton">
                         <img src="../../pics/cashier_icons/search-icon.png" alt="Search">
                     </button>
@@ -120,47 +130,25 @@ include("../../HTML/LOGIN/database_config.php");
             </div>
 
             <div class="product_container">
-                <p id="category_selected">Select a category</p>
+                <p id="category_selected">All Products</p>
                 <div class="products" id="product_list">
-                    <button class="productType" onclick="selectProduct(this)">
+                    <?php foreach ($products as $product): ?>
+                    <button class="productType" onclick="selectProduct(this)" 
+                            data-category="<?= strtolower($product['category_type']) ?>"
+                            data-price="<?= $product['prod_price'] ?>"
+                            data-unit="<?= $product['stock_unit'] ?>"
+                            data-code="<?= $product['prod_code'] ?>">
                         <div class="product_img">
-                            <img src="../../pics/category_products/chickenwings.jpg" alt="Chicken Wings" class="img_prod" id="pr1">
+                            <img src="../../<?= $product['image_path'] ?: 'pics/admin_icons/inventory.png' ?>" 
+                                 alt="<?= htmlspecialchars($product['prod_name']) ?>" 
+                                 class="img_prod">
                         </div>
-                        <p class="product_name" id="pn1">Chicken Wings</p>
+                        <p class="product_name"><?= htmlspecialchars($product['prod_name']) ?></p>
+                        <p class="product_price">₱<?= number_format($product['prod_price'], 2) ?></p>
                     </button>
-
-                    <button class="productType" onclick="selectProduct(this)">
-                        <div class="product_img">
-                            <img src="../../pics/category_products/chickendrums.webp" alt="Chicken Drumsticks" class="img_prod" id="pr2">
-                        </div>
-                        <p class="product_name" id="pn2">Chicken Drumsticks</p>
-                    </button>
-
-                    <button class="productType" onclick="selectProduct(this)">
-                        <div class="product_img">
-                            <img src="../../pics/category_products/chickenneck.avif" alt="Chicken Neck" class="img_prod" id="pr3">
-                        </div>
-                        <p class="product_name" id="pn3">Chicken Neck</p>
-                    </button>
-
-                    <button class="productType" onclick="selectProduct(this)">
-                        <div class="product_img">
-                            <img src="../../pics/category_products/chickenfeet.webp" alt="Chicken Feet" class="img_prod" id="pr4">
-                        </div>
-                        <p class="product_name" id="pn4">Chicken Feet</p>
-                    </button>
-
-                    <button class="productType" onclick="selectProduct(this)">
-                        <div class="product_img">
-                            <img src="../../pics/category_products/wholechicken.webp" alt="Whole Chicken" class="img_prod" id="pr5">
-                        </div>
-                        <p class="product_name" id="pn5">Whole Chicken</p>
-                    </button>
+                    <?php endforeach; ?>
                 </div>
-
             </div>
-
-
         </div>
 
           <div class="Footer">
@@ -192,27 +180,20 @@ include("../../HTML/LOGIN/database_config.php");
                     <img src="../../pics/footer_icons/orderList.png" alt="Order List">
                 </button>
 
-                <button class="button_holder2" onclick="addToCart(), calculateTotal()">
+                <button class="button_holder2" onclick="addToCart()">
                     <p>Add Order</p>
                     <img src="../../pics/footer_icons/addOrder.png" alt="Add Order">
                 </button>
             </div>
-
-
-
           </div>
-
       </div>
-
     </div>
-
 
     <div class="overlay" id="lc">
         <div class="logout_content">
             <p>Are you sure you want to logout?</p>
             <button id="confirmLogout" onclick="logout()">Yes</button>
             <button id="cancelLogout" onclick="hide()">No</button>
-
         </div>
     </div>
 
@@ -220,10 +201,8 @@ include("../../HTML/LOGIN/database_config.php");
         <div class="modal">
             <h2 id="modalTitle"></h2>
             <div id="modalContent"></div>
-            <button class="close-btn" onclick="hideOverlay()">Close</button>
+            
         </div>
     </div>
-
-
 </body>
 </html>
