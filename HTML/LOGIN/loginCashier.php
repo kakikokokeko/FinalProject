@@ -14,10 +14,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($user && password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['acc_code'];
+            $_SESSION['acc_code'] = $user['acc_code'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['name'] = $user['first_name'] . ' ' . $user['last_name'];
-            $_SESSION['position'] = $user['acc_position'];
+            $_SESSION['acc_position'] = $user['acc_position'];
 
             header('Location: ../CASHIER/POS.php');
             exit;

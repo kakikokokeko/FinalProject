@@ -25,8 +25,7 @@ try {
             acc_contact VARCHAR(20) NOT NULL,
             username VARCHAR(50) NOT NULL UNIQUE,
             password VARCHAR(255) NOT NULL
-        )  ",
-        
+        )",
         
         "CREATE TABLE IF NOT EXISTS Category (
             category_code VARCHAR(20) PRIMARY KEY,
@@ -64,11 +63,24 @@ try {
         ('CAT004', 4000),
         ('CAT005', 5000)",
         
-        "CREATE TABLE IF NOT EXISTS Sale (
-            sale_id INT AUTO_INCREMENT PRIMARY KEY,
-            sender VARCHAR(255) NOT NULL,
-            SaleDate DATETIME NOT NULL,
-            TotalAmount DECIMAL(10,2) NOT NULL
+        "CREATE TABLE IF NOT EXISTS Sales (
+            sale_id INT PRIMARY KEY AUTO_INCREMENT,
+            cashier_code VARCHAR(20) NOT NULL,
+            total_amount DECIMAL(10,2) NOT NULL,
+            cash_amount DECIMAL(10,2) NOT NULL,
+            change_amount DECIMAL(10,2) NOT NULL,
+            transaction_date DATETIME NOT NULL,
+            FOREIGN KEY (cashier_code) REFERENCES Account(acc_code)
+        )",
+        
+        "CREATE TABLE IF NOT EXISTS SalesDetails (
+            sale_detail_id INT PRIMARY KEY AUTO_INCREMENT,
+            sale_id INT NOT NULL,
+            prod_code VARCHAR(20) NOT NULL,
+            quantity DECIMAL(10,3) NOT NULL,
+            unit_price DECIMAL(10,2) NOT NULL,
+            FOREIGN KEY (sale_id) REFERENCES Sales(sale_id),
+            FOREIGN KEY (prod_code) REFERENCES Products(prod_code)
         )"
     ];
 

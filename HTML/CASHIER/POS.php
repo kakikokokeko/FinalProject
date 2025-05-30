@@ -3,7 +3,7 @@ session_start();
 include("../../HTML/LOGIN/database_config.php");
 
 // Check if user is logged in
-if (!isset($_SESSION['user_id']) || $_SESSION['position'] !== 'Cashier') {
+if (!isset($_SESSION['acc_code']) || $_SESSION['acc_position'] !== 'Cashier') {
     header('Location: ../LOGIN/loginCashier.php');
     exit;
 }
@@ -33,6 +33,8 @@ try {
     <script src="../../JavaScript/CASHIER/logout.js"></script>
     <script src="../../JavaScript/CASHIER/sidebar.js"></script>
     <script src="../../JavaScript/CASHIER/footer.js"></script>
+    <script src="../../JavaScript/CASHIER/orders.js"></script>
+    <script src="../../JavaScript/CASHIER/checkout.js"></script>
     <link rel="icon" href="../../pics/logo.png" sizes="any">
 </head>
 <body>
@@ -57,22 +59,29 @@ try {
       <div class="Sidebar">
           <p class="current_orders">Current Orders</p>
 
-          <div class="orders-table">
-              <p>Item name</p>
-              <p>Qty.</p>
-              <p>Price</p>
-          </div>
-          <hr>
-
-          <div class="orders_container">
+          <div class="orders-section">
+              <table class="orders-table">
+                  <thead>
+                      <tr>
+                          <th>Item Name</th>
+                          <th>Qty.</th>
+                          <th>Price</th>
+                      </tr>
+                  </thead>
+              </table>
+              
+              <div class="orders-container">
+                  <table class="orders-table">
+                      <tbody id="ordersTableBody">
+                          <!-- Orders will be dynamically added here -->
+                      </tbody>
+                  </table>
+              </div>
           </div>
 
           <div class="Sidebar-bottom">
               <div class="total">
-                  <p id="TOTAL">TOTAL:</p>
-                  <p>CASH:</p>
-                  <hr>
-                  <p>CHANGE:</p>
+                  <p id="TOTAL">₱0.00</p>
               </div>
 
               <div class="sidebarbttn-container">
@@ -82,21 +91,21 @@ try {
 
                   <div class="container_button">
                       <div class="button-wrapper">
-                          <button class="buttons" onclick="toggleColor(this)">
+                          <button class="buttons" onclick="editSelected()">
                               <img src="../../pics/cashier_icons/Edit.png" alt="Edit icon">
                           </button>
                           <p class="button_name">Edit</p>
                       </div>
 
                       <div class="button-wrapper">
-                          <button class="buttons" onclick="toggleColor(this)">
+                          <button class="buttons" onclick="deleteAll()">
                               <img src="../../pics/cashier_icons/Delete.png" alt="delete">
                           </button>
                           <p class="button_name">Delete All</p>
                       </div>
 
                       <div class="button-wrapper">
-                          <button class="buttons" onclick="toggleColor(this)">
+                          <button class="buttons" onclick="deleteSelected()">
                               <img src="../../pics/cashier_icons/Delete%20.png" alt="delete">
                           </button>
                           <p class="button_name">Delete</p>
@@ -170,15 +179,16 @@ try {
                     </button>
                 </div>
 
-                <button class="button_holder" onclick="showOverlay('priceList')">
-                    <p>Price List</p>
-                    <img id="pricelist" src="../../pics/footer_icons/priceList.png" alt="Price List">
-                </button>
-
-                <button class="button_holder" onclick="showOverlay('orderList')">
+                <button class="button_holder" onclick="showOrderHistory()">
                     <p>Order List</p>
                     <img src="../../pics/footer_icons/orderList.png" alt="Order List">
                 </button>
+
+                <button class="button_holder" onclick="showCheckoutModal()">
+                    <p>Checkout</p>
+                    <span class="checkmark">✓</span>
+                </button>
+
 
                 <button class="button_holder2" onclick="addToCart()">
                     <p>Add Order</p>
@@ -201,7 +211,107 @@ try {
         <div class="modal">
             <h2 id="modalTitle"></h2>
             <div id="modalContent"></div>
-            
+        </div>
+    </div>
+
+    <div id="checkoutModal" class="overlay">
+        <div class="modal checkout-modal">
+            <h2>Order Summary</h2>
+            <div class="checkout-content">
+                <table class="checkout-table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                        </tr>
+                    </thead>
+                    <tbody id="checkoutTableBody">
+                    </tbody>
+                </table>
+                <div class="checkout-total">
+                    <p>Total Amount: <span id="checkoutTotal">₱0.00</span></p>
+                </div>
+                <div class="payment-section">
+                    <div class="input-group">
+                        <label for="cashAmount">Cash Amount:</label>
+                        <input type="number" id="cashAmount" step="0.01" min="0">
+                    </div>
+                    <div class="change-amount">
+                        <p>Change: <span id="changeAmount">₱0.00</span></p>
+                    </div>
+                </div>
+                <div class="checkout-buttons">
+                    <button id="processPayment" onclick="processPayment()">Process Payment</button>
+                    <button id="cancelCheckout" onclick="hideCheckoutModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order History Modal -->
+    <div id="orderHistoryModal" class="overlay">
+        <div class="modal order-history-modal">
+            <h2>Order History</h2>
+            <div class="order-history-controls">
+                <select id="orderHistoryFilter" onchange="filterOrderHistory()">
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                    <option value="all">All Orders</option>
+                </select>
+            </div>
+            <div class="order-history-content">
+                <table class="order-history-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Order ID</th>
+                            <th>Total Amount</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orderHistoryTableBody">
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-buttons">
+                <button onclick="hideOrderHistory()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div id="orderDetailsModal" class="overlay">
+        <div class="modal order-details-modal">
+            <h2>Order Details</h2>
+            <div class="order-details-content">
+                <div class="order-info">
+                    <p>Order ID: <span id="detailOrderId"></span></p>
+                    <p>Date: <span id="detailDate"></span></p>
+                    <p>Cashier: <span id="detailCashier"></span></p>
+                </div>
+                <table class="order-details-table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Quantity</th>
+                            <th>Unit Price</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orderDetailsTableBody">
+                    </tbody>
+                </table>
+                <div class="order-summary">
+                    <p>Total Amount: <span id="detailTotal"></span></p>
+                    <p>Cash Amount: <span id="detailCash"></span></p>
+                    <p>Change: <span id="detailChange"></span></p>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button onclick="hideOrderDetails()">Close</button>
+            </div>
         </div>
     </div>
 </body>
