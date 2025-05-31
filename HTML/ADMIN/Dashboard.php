@@ -2,7 +2,7 @@
 <html>
 <head>
 	<meta charset="utf-8">
-	<meta name="viewport" content="initial-scale=1, width=device-width">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="stylesheet" href="../../CSS/ADMIN/styleAdminDashboard.css" />
 	<script src="../../JavaScript/ADMIN/admin.js" defer></script>
 	<script src="../../JavaScript/ADMIN/dashboard.js" defer></script>
@@ -12,6 +12,8 @@
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.css" rel="stylesheet" />
 	<!-- Add ApexCharts -->
 	<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+	<!-- Add Font Awesome for icons -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 	<title>Admin Dashboard</title>
 	<link rel="icon" href="../../pics/logo.png" sizes="any">
 	<!-- Configure Tailwind with Flowbite -->
@@ -21,7 +23,12 @@
 				"./node_modules/flowbite/**/*.js"
 			],
 			theme: {
-				extend: {},
+				extend: {
+					colors: {
+						primary: '#991b1b',
+						secondary: '#ECDCBF',
+					},
+				},
 			},
 			plugins: [],
 		}
@@ -56,6 +63,16 @@
 		$checkStmt = $conn->query($checkQuery);
 		$categoriesCount = $checkStmt->fetch(PDO::FETCH_ASSOC)['count'];
 		echo "<!-- Total categories: " . $categoriesCount . " -->";
+
+		// Count total accounts
+		$checkQuery = "SELECT COUNT(*) as count FROM Account";
+		$checkStmt = $conn->query($checkQuery);
+		$accountsCount = $checkStmt->fetch(PDO::FETCH_ASSOC)['count'] ?? 0;
+
+		// Get total sales amount
+		$salesAmountQuery = "SELECT SUM(total_amount) as total FROM Sales";
+		$salesAmountStmt = $conn->query($salesAmountQuery);
+		$totalSales = $salesAmountStmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
 		// Modified query to match the correct table and column names
 		$query = "SELECT 
@@ -122,25 +139,42 @@
 		$series = [100];
 		$labelsJSON = json_encode($labels);
 		$seriesJSON = json_encode($series);
+		$productsCount = 0;
+		$accountsCount = 0;
+		$totalSales = 0;
 	}
 	?>
 <div class="main-container">
 	<div class="header">
-		<img class="logo" src="../../pics/logo.png">
-
-		<div class="dashboard">
-			<img class="dashLogo" src="../../pics/admin_icons/dashboard_white.png">
-			<p id="Dashboard">Dashboard</p>
+		<div class="header-left">
+			<img class="logo" src="../../pics/logo.png" alt="DaMeatUp Logo">
+			<div class="dashboard">
+				<img class="dashLogo" src="../../pics/admin_icons/dashboard_white.png" alt="Dashboard Icon">
+				<p id="Dashboard">Dashboard</p>
+			</div>
 		</div>
 
 		<div class="profile">
-			<img class="ProfLogo" src="../../pics/admin_icons/accountAdmin.png">
+			<img class="ProfLogo" src="../../pics/admin_icons/accountAdmin.png" alt="Admin Icon">
 			<p id="Profile">Admin</p>
 		</div>
+		
+		<!-- Mobile menu button -->
+		<button id="mobile-menu-button" class="mobile-menu-button">
+			<i class="fas fa-bars"></i>
+		</button>
 	</div>
 
 	<div class="main-content">
-		<div class="sidebar-container">
+		<!-- Mobile sidebar overlay -->
+		<div id="sidebar-overlay" class="sidebar-overlay"></div>
+		
+		<div class="sidebar-container" id="sidebar">
+			<!-- Close button for mobile -->
+			<button id="close-sidebar" class="close-sidebar">
+				<i class="fas fa-times"></i>
+			</button>
+			
 			<div class="sidebar-itemActive">
 				<img class="sidebarLogo" src="../../pics/admin_icons/dashboard.png" alt="Dashboard Icon">
 				<button class="bttn">Dashboard</button>
@@ -170,22 +204,46 @@
 		</div>
 
 		<div class="content-area">
-		<!-- Chart shit -->
-			<div class="chart-container">
-				<div class="flex justify-between items-start w-full"
-					<div class="flex-col items-center">
-						<div class="flex items-center mb-1">
-							<h5 class="chart-title">Sales by Category</h5>
-						</div>
+			<!-- Dashboard Summary Cards -->
+			<div class="dashboard-summary">
+				<div class="summary-card">
+					<div class="summary-icon">
+						<i class="fas fa-users"></i>
+					</div>
+					<div class="summary-info">
+						<h3>Total Accounts</h3>
+						<p class="summary-value"><?php echo $accountsCount; ?></p>
 					</div>
 				</div>
+				
+				<div class="summary-card">
+					<div class="summary-icon">
+						<i class="fas fa-drumstick-bite"></i>
+					</div>
+					<div class="summary-info">
+						<h3>Total Products</h3>
+						<p class="summary-value"><?php echo $productsCount; ?></p>
+					</div>
+				</div>
+				
+				<div class="summary-card">
+					<div class="summary-icon">
+						<i class="fas fa-money-bill-wave"></i>
+					</div>
+					<div class="summary-info">
+						<h3>Total Sales</h3>
+						<p class="summary-value">₱<?php echo number_format($totalSales, 2); ?></p>
+					</div>
+				</div>
+			</div>
 
-				<!-- Line Chart -->
-				<div class="py-6" id="pie-chart"></div>
-
-				<div class="grid grid-cols-1 items-center border-gray-200 border-t dark:border-gray-700 justify-between">
-					<div class="flex justify-between items-center pt-5">
-						<!-- Button -->
+			<!-- Chart Container -->
+			<div class="chart-container">
+				<div class="chart-header">
+					<h5 class="chart-title">Sales by Category</h5>
+					
+					<!-- Filter dropdown -->
+					<div class="filter-dropdown">
 						<button
 							id="dropdownDefaultButton"
 							data-dropdown-toggle="lastDaysdropdown"
@@ -222,31 +280,45 @@
 							</li>
 							</ul>
 						</div>
-						
+					</div>
+				</div>
+
+				<!-- Pie Chart -->
+				<div class="chart-wrapper">
+					<div id="pie-chart"></div>
+				</div>
+			</div>
+
+			<!-- Quick Access Buttons -->
+			<div class="quick-access">
+				<h2 class="section-title">Quick Access</h2>
+				<div class="quick-access-grid">
+					<div class="quick-access-card" onclick="account()">
+						<div class="quick-access-icon">
+							<img src="../../pics/admin_icons/account1.png" alt="Accounts Icon">
+						</div>
+						<h3>Manage Accounts</h3>
+						<p>Add, edit or remove user accounts</p>
+					</div>
+					
+					<div class="quick-access-card" onclick="inventory()">
+						<div class="quick-access-icon">
+							<img src="../../pics/admin_icons/meat.png" alt="Products Icon">
+						</div>
+						<h3>Manage Products</h3>
+						<p>Update inventory and product details</p>
+					</div>
+					
+					<div class="quick-access-card" onclick="reports()">
+						<div class="quick-access-icon">
+							<img src="../../pics/admin_icons/sales.png" alt="Sales Icon">
+						</div>
+						<h3>View Reports</h3>
+						<p>Access detailed sales reports</p>
 					</div>
 				</div>
 			</div>
-
-			<div class="dashContent">
-				<div class="rectangle-div">
-					<img class="accLogo" src="../../pics/admin_icons/account1.png" alt="Accounts Icon">
-					<p class="info">Accounts</p>
-				</div>
-
-				<div class="rectangle-div">
-					<img class="accLogo" src="../../pics/admin_icons/meat.png" alt="Products Icon">
-					<p class="info">Products</p>
-				</div>
-
-				<div class="rectangle-div">
-					<img class="accLogo" src="../../pics/admin_icons/sales.png" alt="Sales Icon">
-					<p class="info">Sales</p>
-				</div>
-			</div>
-
-			
 		</div>
-
 	</div>
 </div>
 
@@ -261,12 +333,39 @@
     </div>
 </div>
 
-<!-- Add Flowbite JavaScript before closing body tag -->
+<!-- Add Flowbite JavaScript -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
+
 <!-- Initialize the chart -->
 <script>
     window.addEventListener("load", function() {
         initializeChart(<?php echo $labelsJSON; ?>, <?php echo $seriesJSON; ?>);
+        
+        // Mobile menu functionality
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const sidebar = document.getElementById('sidebar');
+        const closeSidebar = document.getElementById('close-sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        
+        if(mobileMenuButton && sidebar && closeSidebar && sidebarOverlay) {
+            mobileMenuButton.addEventListener('click', function() {
+                sidebar.classList.add('active');
+                sidebarOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            closeSidebar.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                sidebarOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+            
+            sidebarOverlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                sidebarOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+        }
     });
 </script>
 </body>
