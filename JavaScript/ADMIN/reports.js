@@ -2,13 +2,47 @@
 let salesTable;
 let salesChart;
 
+// Mobile menu functionality
 document.addEventListener('DOMContentLoaded', function() {
+    // Mobile menu functionality
+    initializeMobileMenu();
+    
+    // Initialize other features
     initializeDataTable();
     initializeChart();
     initializeFilters();
     loadSummaryCards();
     loadQuickSummary();
 });
+
+// Mobile menu initialization
+function initializeMobileMenu() {
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const sidebar = document.querySelector('.sidebar-container');
+    const closeSidebar = document.getElementById('close-sidebar');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+    
+    if(mobileMenuButton && sidebar && closeSidebar && sidebarOverlay) {
+        mobileMenuButton.addEventListener('click', function() {
+            console.log('Mobile menu clicked'); // Debug log
+            sidebar.classList.add('active');
+            sidebarOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        
+        closeSidebar.addEventListener('click', function() {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+        
+        sidebarOverlay.addEventListener('click', function() {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+    }
+}
 
 function initializeDataTable() {
     salesTable = $('#salesTable').DataTable({

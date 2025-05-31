@@ -1,5 +1,57 @@
-// Handle alert messages on page load
+// Main initialization
 document.addEventListener('DOMContentLoaded', function() {
+    // Mobile menu functionality
+    initializeMobileMenu();
+    
+    // Initialize other features
+    initializeImageHandling();
+    handleAlertMessages();
+});
+
+// Mobile menu initialization
+function initializeMobileMenu() {
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const sidebar = document.querySelector('.sidebar-container');
+    const closeSidebar = document.getElementById('close-sidebar');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+    
+    if(mobileMenuButton && sidebar && closeSidebar && sidebarOverlay) {
+        mobileMenuButton.addEventListener('click', function() {
+            console.log('Mobile menu clicked'); // Debug log
+            sidebar.classList.add('active');
+            sidebarOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        
+        closeSidebar.addEventListener('click', function() {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+        
+        sidebarOverlay.addEventListener('click', function() {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+    } else {
+        console.error('Mobile menu elements not found:', {
+            mobileMenuButton: !!mobileMenuButton,
+            sidebar: !!sidebar,
+            closeSidebar: !!closeSidebar,
+            sidebarOverlay: !!sidebarOverlay
+        });
+    }
+}
+
+// Initialize image handling
+function initializeImageHandling() {
+    // Initialize image upload preview if the element exists
+    initializeImageUpload();
+}
+
+// Handle alert messages
+function handleAlertMessages() {
     const body = document.body;
     const message = body.dataset.message;
     const success = body.dataset.success === 'true';
@@ -10,10 +62,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('addProductPopup').style.display = 'none';
         }
     }
-
-    // Initialize image upload preview if the element exists
-    initializeImageUpload();
-});
+}
 
 // Product Search Function
 function searchProduct() {

@@ -340,6 +340,8 @@ if (isset($_GET['action'])) {
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Add Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <title>Admin Reports</title>
     <link rel="icon" href="../../pics/logo.png" sizes="any">
     <script src="../../JavaScript/ADMIN/admin.js" defer></script>
@@ -359,10 +361,22 @@ if (isset($_GET['action'])) {
             <img class="ProfLogo" src="../../pics/admin_icons/accountAdmin.png">
             <p id="Profile">Admin</p>
         </div>
+
+        <!-- Mobile menu button -->
+        <button id="mobile-menu-button" class="mobile-menu-button">
+            <i class="fas fa-bars"></i>
+        </button>
     </div>
 
     <div class="main-content">
+        <!-- Mobile sidebar overlay -->
+        <div id="sidebar-overlay" class="sidebar-overlay"></div>
+        
         <div class="sidebar-container">
+            <!-- Close button for mobile -->
+            <button id="close-sidebar" class="close-sidebar">
+                <i class="fas fa-times"></i>
+            </button>
             <div class="sidebar-item" onclick="window.location.href='dashboard.php'">
                 <img class="sidebarLogo" src="../../pics/admin_icons/dashboard.png" alt="Dashboard Icon">
                 <button class="bttn">Dashboard</button>
@@ -435,6 +449,10 @@ if (isset($_GET['action'])) {
                     <div class="table-container">
                         <div class="table-header">
                             <h2>Sales History</h2>
+                        </div>
+                        <!-- Add scroll indicator for mobile -->
+                        <div class="table-scroll-indicator">
+                            Swipe left/right to view more data
                         </div>
                         <table id="salesTable">
                             <thead>

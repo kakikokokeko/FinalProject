@@ -244,6 +244,8 @@ if ($has_message) {
     <meta name="viewport" content="initial-scale=1, width=device-width">
     <link rel="stylesheet" href="../../CSS/ADMIN/styleAdminAccounts.css" />
     <link rel="stylesheet" href="../../CSS/ADMIN/logoutModal.css" />
+    <!-- Add Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="../../JavaScript/ADMIN/admin.js" defer></script>
     <script src="../../JavaScript/ADMIN/adminAccounts.js" defer></script>
     <title>Admin Accounts</title>
@@ -264,10 +266,23 @@ if ($has_message) {
                 <img class="ProfLogo" src="../../pics/admin_icons/accountAdmin.png">
                 <p id="Profile">Admin</p>
             </div>
+            
+            <!-- Mobile menu button -->
+            <button id="mobile-menu-button" class="mobile-menu-button">
+                <i class="fas fa-bars"></i>
+            </button>
         </div>
 
         <div class="main-content">
+            <!-- Mobile sidebar overlay -->
+            <div id="sidebar-overlay" class="sidebar-overlay"></div>
+            
             <div class="sidebar-container">
+                <!-- Close button for mobile -->
+                <button id="close-sidebar" class="close-sidebar">
+                    <i class="fas fa-times"></i>
+                </button>
+
                 <div class="sidebar-item" onclick="dashboard()">
                     <img class="sidebarLogo" src="../../pics/admin_icons/dashboard.png" alt="Dashboard Icon">
                     <button class="bttn">Dashboard</button>
