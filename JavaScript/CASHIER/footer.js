@@ -1,14 +1,37 @@
 let count = 0;
 function increase() {
     count++;
-    document.getElementById("scale_number").textContent = count;
+    document.getElementById("scale_number").value = count;
 }
 
 function decrease() {
     if (count > 0) {
         count--;
     }
-    document.getElementById("scale_number").textContent = count;
+    document.getElementById("scale_number").value = count;
+}
+
+function validateInput(input) {
+    // Get the current unit
+    const scaleElement = document.getElementById('scale');
+    const currentUnit = scaleElement.textContent;
+    
+    // Convert input to number
+    let value = parseFloat(input.value) || 0;
+    
+    // Ensure value is not negative
+    if (value < 0) {
+        value = 0;
+    }
+    
+    // For 'qty' unit, ensure it's a whole number
+    if (currentUnit === 'qty') {
+        value = Math.floor(value);
+    }
+    
+    // Update both the input value and count variable
+    input.value = value;
+    count = value;
 }
 
 function metric() {
@@ -72,7 +95,7 @@ function addToCart() {
         return;
     }
     
-    const quantity = parseFloat(document.getElementById('scale_number').textContent);
+    const quantity = parseFloat(document.getElementById('scale_number').value);
     if (quantity <= 0) {
         alert('Quantity must be at least 1!');
         return;
@@ -121,7 +144,7 @@ function addToCart() {
 
     // Reset selection and quantity
     selectedProduct.classList.remove('selected');
-    document.getElementById('scale_number').textContent = '0';
+    document.getElementById('scale_number').value = '0';
     count = 0;
 }
 

@@ -4,7 +4,8 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="initial-scale=1, width=device-width">
 	<link rel="stylesheet" href="../../CSS/ADMIN/styleAdminDashboard.css" />
-	<script src="../../JavaScript/ADMIN/admin.js"></script>
+	<script src="../../JavaScript/ADMIN/admin.js" defer></script>
+	<script src="../../JavaScript/ADMIN/dashboard.js" defer></script>
 	<!-- Add Tailwind CSS from CDN -->
 	<script src="https://cdn.tailwindcss.com"></script>
 	<!-- Add Flowbite CSS -->
@@ -161,19 +162,17 @@
 			</div>
 
 			<div class="logoutbutton">
-				<a href="../../HTML/LOGIN/login.html">
-					<button class="logbttn">
-						<img class="logoutlogo" src="../../pics/admin_icons/logout.png" alt="Logout Icon">
-						LOGOUT
-					</button>
-				</a>
+				<button class="logbttn" onclick="showLogoutModal()">
+					<img class="logoutlogo" src="../../pics/admin_icons/logout.png" alt="Logout Icon">
+					LOGOUT
+				</button>
 			</div>
 		</div>
 
 		<div class="content-area">
 		<!-- Chart shit -->
 			<div class="chart-container">
-				<div class="flex justify-between items-start w-full">
+				<div class="flex justify-between items-start w-full"
 					<div class="flex-col items-center">
 						<div class="flex items-center mb-1">
 							<h5 class="chart-title">Sales by Category</h5>
@@ -250,6 +249,18 @@
 
 	</div>
 </div>
+
+<!-- Logout Modal -->
+<div class="overlay" id="logoutModal">
+    <div class="logout-content">
+        <p>Are you sure you want to logout?</p>
+        <div class="logout-buttons">
+            <button id="confirmLogout" onclick="confirmLogout()">Yes</button>
+            <button id="cancelLogout" onclick="hideLogoutModal()">No</button>
+        </div>
+    </div>
+</div>
+
 <!-- Add Flowbite JavaScript before closing body tag -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
 <!-- Initialize the chart -->

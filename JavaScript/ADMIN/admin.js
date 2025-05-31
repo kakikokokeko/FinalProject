@@ -183,4 +183,24 @@ if (document.getElementById("pie-chart") && typeof ApexCharts !== 'undefined') {
     const chart = new ApexCharts(document.getElementById("pie-chart"), getChartOptions());
     chart.render();
 }
+
+//-----------------------------------------------------------------LOGOUT MODAL------------------------------------------------------------------
+
+function showLogoutModal() {
+    const modal = document.getElementById('logoutModal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function hideLogoutModal() {
+    const modal = document.getElementById('logoutModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function confirmLogout() {
+    window.location.href = '../../HTML/LOGIN/index.php';
+}
   

@@ -99,7 +99,7 @@ body {
     border: none;
     border-radius: 50px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: all 0.3s ease;
     min-width: 120px;
     text-align: center;
     white-space: nowrap;
@@ -107,41 +107,107 @@ body {
 
 .bttn:hover {
     background-color: rgb(220, 217, 217);
+    transform: scale(1.05);
+}
+
+.login-button {
+    text-decoration: none;
+}
+
+.mobile-notice {
+    color: #ffd7d7;
+    font-size: 0.9rem;
+    margin-top: 20px;
+    text-align: center;
+    padding: 0 20px;
+    font-style: italic;
+    display: none;
 }
 
 @media (max-width: 768px) {
+    .cashier-button {
+        display: none !important;
+    }
+    
+    .mobile-notice {
+        display: block !important;
+    }
+    
     .loginAs {
         padding: clamp(10px, 6vw, 30px) 0 clamp(15px, 8vw, 40px);
+        min-height: 45vh;
     }
     
     .buttons {
         flex-direction: column;
         align-items: center;
         gap: 1rem;
+        margin-top: clamp(10px, 4vw, 30px);
     }
     
     .bttn {
-        width: 70%;
+        width: 100%;
         max-width: 220px;
+        padding: 10px 30px;
+    }
+
+    .logo {
+        margin-top: clamp(20px, 5vw, 40px);
     }
 }
 
 @media (max-width: 480px) {
     .logo {
-        width: clamp(70px, 20vw, 100px);
-        height: clamp(70px, 20vw, 100px);
+        width: clamp(80px, 25vw, 120px);
+        height: clamp(80px, 25vw, 120px);
+        margin-top: clamp(30px, 8vw, 50px);
     }
     
     #label {
-        font-size: clamp(1rem, 4vw, 1.5rem);
+        font-size: clamp(1.2rem, 5vw, 1.5rem);
+        margin-top: clamp(40px, 12vw, 60px);
     }
     
     #welcome {
-        font-size: clamp(0.8rem, 2.5vw, 1rem);
+        font-size: clamp(0.8rem, 3vw, 1rem);
+        margin-top: 10px;
     }
     
     .bttn {
-        padding: 8px 20px;
+        padding: 12px 30px;
+        font-size: 1rem;
+        width: 80%;
+    }
+
+    .loginAs {
+        min-height: 50vh;
+    }
+
+    .mobile-notice {
+        font-size: 0.85rem;
+        margin-top: 15px;
+    }
+}
+
+/* For very small devices */
+@media (max-width: 320px) {
+    .logo {
+        width: 70px;
+        height: 70px;
+        margin-top: 20px;
+    }
+
+    #label {
+        font-size: 1.1rem;
+        margin-top: 30px;
+    }
+
+    #welcome {
+        font-size: 0.8rem;
+    }
+
+    .bttn {
+        padding: 10px 25px;
         font-size: 0.9rem;
     }
 }

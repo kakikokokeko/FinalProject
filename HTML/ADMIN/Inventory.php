@@ -59,14 +59,30 @@ if (isset($_POST['action'])) {
                     throw new Exception('Product not found');
                 }
 
-                // Delete the product
-                $stmt = $pdo->prepare("DELETE FROM Products WHERE prod_code = ?");
-                $success = $stmt->execute([$_POST['prod_code']]);
+                // Start transaction
+                $pdo->beginTransaction();
                 
-                echo json_encode([
-                    'success' => $success,
-                    'message' => $success ? 'Product deleted successfully' : 'Failed to delete product'
-                ]);
+                try {
+                    // First delete related records in salesdetails
+                    $deleteDetailsStmt = $pdo->prepare("DELETE FROM SalesDetails WHERE prod_code = ?");
+                    $deleteDetailsStmt->execute([$_POST['prod_code']]);
+                    
+                    // Then delete the product
+                    $deleteProductStmt = $pdo->prepare("DELETE FROM Products WHERE prod_code = ?");
+                    $deleteProductStmt->execute([$_POST['prod_code']]);
+                    
+                    // Commit the transaction
+                    $pdo->commit();
+                    
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Product and related sales records deleted successfully'
+                    ]);
+                } catch (Exception $e) {
+                    // Rollback on error
+                    $pdo->rollBack();
+                    throw new Exception('Failed to delete product: ' . $e->getMessage());
+                }
                 break;
                 
             case 'update':
@@ -283,10 +299,11 @@ $current_order = isset($_GET['order']) ? $_GET['order'] : 'ASC';
     <meta charset="utf-8">
     <meta name="viewport" content="initial-scale=1, width=device-width">
     <link rel="stylesheet" href="../../CSS/ADMIN/styleAdminInventory.css" />
+    <link rel="stylesheet" href="../../CSS/ADMIN/logoutModal.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
-    <script src="../../JavaScript/ADMIN/adminInventory.js" defer></script>
     <script src="../../JavaScript/ADMIN/admin.js" defer></script>
+    <script src="../../JavaScript/ADMIN/adminInventory.js" defer></script>
     <title>Admin Inventory</title>
     <link rel="icon" href="../../pics/logo.png" sizes="any">
 </head>
@@ -345,12 +362,10 @@ $current_order = isset($_GET['order']) ? $_GET['order'] : 'ASC';
             </div>
 
             <div class="logoutbutton">
-                <a href="../LOGIN/login.html">
-                    <button class="logbttn">
-                        <img class="logoutlogo" src="../../pics/admin_icons/logout.png" alt="Logout Icon">
-                        LOGOUT
-                    </button>
-                </a>
+                <button class="logbttn" onclick="showLogoutModal()">
+                    <img class="logoutlogo" src="../../pics/admin_icons/logout.png" alt="Logout Icon">
+                    LOGOUT
+                </button>
             </div>
         </div>
 
@@ -669,6 +684,17 @@ $current_order = isset($_GET['order']) ? $_GET['order'] : 'ASC';
     </div>
 
 
+</div>
+
+<!-- Logout Modal -->
+<div class="overlay" id="logoutModal">
+    <div class="logout-content">
+        <p>Are you sure you want to logout?</p>
+        <div class="logout-buttons">
+            <button id="confirmLogout" onclick="confirmLogout()">Yes</button>
+            <button id="cancelLogout" onclick="hideLogoutModal()">No</button>
+        </div>
+    </div>
 </div>
 
 </body>

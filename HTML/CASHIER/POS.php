@@ -27,6 +27,7 @@ try {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cashier Point of Sale</title>
     <link rel="stylesheet" href="../../CSS/CASHIER/cashier.css">
     <script src="../../JavaScript/CASHIER/categories.js"></script>
@@ -38,6 +39,13 @@ try {
     <link rel="icon" href="../../pics/logo.png" sizes="any">
 </head>
 <body>
+    <!-- Mobile restriction message -->
+    <div class="mobile-restriction">
+        <img src="../../pics/logo.png" alt="Logo" class="mobile-logo">
+        <h2>Desktop Only</h2>
+        <p>This POS system is optimized for desktop use only. Please access it from a computer.</p>
+    </div>
+
     <div class="container">
       <div class="Header">
         <div class="image_container">
@@ -169,7 +177,7 @@ try {
 
                 <div class="button_holder1">
                     <div class="number_display">
-                        <p id="scale_number">0</p>
+                        <input type="number" id="scale_number" value="0" min="0" step="1" onchange="validateInput(this)">
                     </div>
                     <button class="minus" onclick="decrease()">
                         -

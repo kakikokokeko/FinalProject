@@ -1,0 +1,62 @@
+/* Logout Modal Styles */
+
+/* Logout Modal */
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.logout-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    min-width: 300px;
+}
+
+.logout-content p {
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+    color: #333;
+}
+
+.logout-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+#confirmLogout, #cancelLogout {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+#confirmLogout {
+    background-color: #991b1b;
+    color: white;
+}
+
+#confirmLogout:hover {
+    background-color: #7f1d1d;
+}
+
+#cancelLogout {
+    background-color: #e5e5e5;
+    color: #333;
+}
+
+#cancelLogout:hover {
+    background-color: #d4d4d4;
+} 

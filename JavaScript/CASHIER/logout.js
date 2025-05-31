@@ -7,5 +7,5 @@ function hide(){
 }
 
 function logout(){
-    window.location.href = "../../HTML/LOGIN/login.html";
+    window.location.href = "../../HTML/LOGIN/index.php";
 }

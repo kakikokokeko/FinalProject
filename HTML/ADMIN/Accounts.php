@@ -243,6 +243,8 @@ if ($has_message) {
     <meta charset="utf-8">
     <meta name="viewport" content="initial-scale=1, width=device-width">
     <link rel="stylesheet" href="../../CSS/ADMIN/styleAdminAccounts.css" />
+    <link rel="stylesheet" href="../../CSS/ADMIN/logoutModal.css" />
+    <script src="../../JavaScript/ADMIN/admin.js" defer></script>
     <script src="../../JavaScript/ADMIN/adminAccounts.js" defer></script>
     <title>Admin Accounts</title>
     <link rel="icon" href="../../pics/logo.png" sizes="any">
@@ -287,12 +289,10 @@ if ($has_message) {
                 </div>
 
                 <div class="logoutbutton">
-                    <a href="../LOGIN/login.html">
-                        <button class="logbttn">
-                            <img class="logoutlogo" src="../../pics/admin_icons/logout.png" alt="Logout Icon">
-                            LOGOUT
-                        </button>
-                    </a>
+                    <button class="logbttn" onclick="showLogoutModal()">
+                        <img class="logoutlogo" src="../../pics/admin_icons/logout.png" alt="Logout Icon">
+                        LOGOUT
+                    </button>
                 </div>
             </div>
 
@@ -609,6 +609,17 @@ if ($has_message) {
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Modal -->
+    <div class="overlay" id="logoutModal">
+        <div class="logout-content">
+            <p>Are you sure you want to logout?</p>
+            <div class="logout-buttons">
+                <button id="confirmLogout" onclick="confirmLogout()">Yes</button>
+                <button id="cancelLogout" onclick="hideLogoutModal()">No</button>
             </div>
         </div>
     </div>
