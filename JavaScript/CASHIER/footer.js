@@ -105,27 +105,33 @@ function addToCart() {
     const basePrice = parseFloat(selectedProduct.getAttribute('data-price'));
     const unit = selectedProduct.getAttribute('data-unit');
     const scaleType = document.getElementById('scale').textContent;
+    const prodCode = selectedProduct.getAttribute('data-code');
     
     let finalQuantity = quantity;
     let displayUnit = unit;
     let pricePerUnit = basePrice;
+    let actualQuantity = quantity; // This will be the quantity used for stock deduction
 
     // Handle unit conversion if needed
     if (unit === 'kg') {
         if (scaleType === 'g') {
-            finalQuantity = quantity / 1000; // Convert grams to kilograms
+            finalQuantity = quantity; // Keep display in grams
             displayUnit = 'g';
             pricePerUnit = basePrice / 1000; // Price per gram
+            actualQuantity = quantity / 1000; // Convert to kg for stock deduction
         } else if (scaleType === 'qty') {
             displayUnit = 'pcs';
             pricePerUnit = basePrice; // Price per piece
+            actualQuantity = quantity; // No conversion needed
         } else {
             displayUnit = 'kg';
             pricePerUnit = basePrice; // Price per kg
+            actualQuantity = quantity; // No conversion needed
         }
     } else {
         displayUnit = 'pcs'; // For quantity items
         pricePerUnit = basePrice; // Price per piece
+        actualQuantity = quantity; // No conversion needed
     }
 
     const totalPrice = pricePerUnit * quantity;
@@ -135,9 +141,12 @@ function addToCart() {
     const tr = document.createElement('tr');
     tr.innerHTML = `
         <td>${productName}</td>
-        <td>${quantity} ${displayUnit}</td>
+        <td data-actual-quantity="${actualQuantity}" data-unit="${unit}">${quantity} ${displayUnit}</td>
         <td>₱${totalPrice.toFixed(2)}</td>
     `;
+    
+    // Make the row selectable before adding it to the table
+    makeRowSelectable(tr);
     tbody.appendChild(tr);
 
     calculateTotal();

@@ -12,6 +12,7 @@ function initializeChart(labels, series) {
 
     // Generate colors for the chart
     const colors = generateChartColors(series.length);
+    console.log('Generated colors:', colors); // Debug log
     
     const options = {
         chart: {
@@ -19,6 +20,12 @@ function initializeChart(labels, series) {
             type: "pie",
             toolbar: {
                 show: false
+            },
+            animations: {
+                enabled: true,
+                dynamicAnimation: {
+                    enabled: true
+                }
             },
             events: {
                 dataPointSelection: function() {
@@ -55,11 +62,22 @@ function initializeChart(labels, series) {
                 expandOnClick: false,  // Disable expanding on click
                 donut: {
                     size: '65%'  // Make the chart slightly thicker
-                }
+                },
+                customScale: 1,
+                offsetX: 0,
+                offsetY: 0
             }
         },
         dataLabels: {
-            enabled: false
+            enabled: true,
+            style: {
+                fontSize: '14px',
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 'bold'
+            },
+            formatter: function(val, opts) {
+                return opts.w.config.labels[opts.seriesIndex] + ': ' + val.toFixed(1) + '%';
+            }
         },
         tooltip: {
             enabled: true,
@@ -114,11 +132,20 @@ function initializeChart(labels, series) {
         }
     };
 
+    console.log('Chart options:', options); // Debug log
+
     // Render the chart if the element exists
     if (document.getElementById("pie-chart") && typeof ApexCharts !== 'undefined') {
         try {
+            // Destroy existing chart if it exists
+            const existingChart = document.querySelector("#pie-chart apex-charts-canvas");
+            if (existingChart) {
+                existingChart.remove();
+            }
+
             const chart = new ApexCharts(document.getElementById("pie-chart"), options);
             chart.render();
+            console.log('Chart rendered successfully'); // Debug log
         } catch (error) {
             console.error('Error rendering chart:', error);
         }
@@ -127,19 +154,21 @@ function initializeChart(labels, series) {
 
 // Generate colors for the chart
 function generateChartColors(count) {
-    // Base colors
+    // Base colors with more distinct variations
     const baseColors = [
-        '#991b1b', // Primary color
-        '#b91c1c',
-        '#dc2626',
-        '#ef4444',
-        '#f87171',
-        '#7f1d1d',
-        '#ECDCBF', // Secondary color
-        '#d6c4a5',
-        '#c0ad8f',
-        '#aa9679'
+        '#FF0000', // Pure Red
+        '#FF4D00', // Orange-Red
+        '#FF9900', // Orange
+        '#FFCC00', // Yellow-Orange
+        '#E6B800', // Dark Yellow
+        '#991b1b', // Dark Red
+        '#7f1d1d', // Deeper Red
+        '#FF6666', // Light Red
+        '#FF3333', // Bright Red
+        '#CC0000'  // Dark Red
     ];
+    
+    console.log('Number of categories:', count); // Debug log
     
     // If we have more categories than base colors, generate additional colors
     if (count <= baseColors.length) {
@@ -147,12 +176,11 @@ function generateChartColors(count) {
     } else {
         const colors = [...baseColors];
         
-        // Generate additional colors
+        // Generate additional colors with more variation
         for (let i = baseColors.length; i < count; i++) {
-            // Generate a random color with some hue variation
-            const hue = Math.floor(Math.random() * 360);
-            const saturation = 70 + Math.floor(Math.random() * 30); // 70-100%
-            const lightness = 40 + Math.floor(Math.random() * 20);  // 40-60%
+            const hue = (i * 30) % 60; // Create evenly spaced hues in the red-orange range
+            const saturation = 80 + Math.floor(Math.random() * 20); // 80-100%
+            const lightness = 45 + Math.floor(Math.random() * 15);  // 45-60%
             
             colors.push(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
         }

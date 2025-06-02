@@ -1,33 +1,6 @@
-let isSelectionMode = false;
-
-function toggleSelection(button) {
-    isSelectionMode = !isSelectionMode;
-    button.classList.toggle('active');
-    
-    const tbody = document.getElementById('ordersTableBody');
-    const rows = tbody.getElementsByTagName('tr');
-    
-    // Enable/disable row selection based on mode
-    for (let row of rows) {
-        if (isSelectionMode) {
-            row.onclick = function() {
-                this.classList.toggle('selected');
-            };
-        } else {
-            row.onclick = null;
-            row.classList.remove('selected');
-        }
-    }
-}
-
+// Functions for managing orders
 function deleteSelected() {
-    if (!isSelectionMode) {
-        alert('Please select an item first (click the Select button)');
-        return;
-    }
-
-    const tbody = document.getElementById('ordersTableBody');
-    const selectedRows = tbody.getElementsByClassName('selected');
+    const selectedRows = document.getElementsByClassName('selected');
     
     // Convert to array because we'll be modifying the live HTMLCollection
     const rowsToDelete = Array.from(selectedRows);
@@ -46,11 +19,6 @@ function deleteSelected() {
 }
 
 function deleteAll() {
-    if (!isSelectionMode) {
-        alert('Please select an item first (click the Select button)');
-        return;
-    }
-
     const tbody = document.getElementById('ordersTableBody');
     if (tbody.children.length === 0) {
         alert('No items to delete');
@@ -64,11 +32,6 @@ function deleteAll() {
 }
 
 function editSelected() {
-    if (!isSelectionMode) {
-        alert('Please select an item first (click the Select button)');
-        return;
-    }
-
     const selectedRows = document.getElementsByClassName('selected');
     
     if (selectedRows.length === 0) {
@@ -106,11 +69,40 @@ function editSelected() {
     
     // Recalculate total
     calculateTotal();
+}
+
+// Initialize order table functionality when the document loads
+document.addEventListener('DOMContentLoaded', function() {
+    const ordersTableBody = document.getElementById('ordersTableBody');
+    if (!ordersTableBody) return;
+
+    // Add click handler using event delegation
+    ordersTableBody.addEventListener('click', function(event) {
+        const row = event.target.closest('tr');
+        if (!row) return;
+        
+        // Toggle selection
+        row.classList.toggle('selected');
+    });
+});
+
+// Function to make a row selectable
+function makeRowSelectable(row) {
+    row.style.cursor = 'pointer';
+}
+
+function calculateTotal() {
+    const rows = document.querySelectorAll('#ordersTableBody tr td:last-child');
+    let total = 0;
     
-    // Clear selection
-    row.classList.remove('selected');
-    document.getElementById('select').classList.remove('active');
-    isSelectionMode = false;
+    rows.forEach(cell => {
+        const price = parseFloat(cell.textContent.replace('₱', ''));
+        if (!isNaN(price)) {
+            total += price;
+        }
+    });
+    
+    document.getElementById('TOTAL').textContent = `₱${total.toFixed(2)}`;
 }
 
 // Show order history modal

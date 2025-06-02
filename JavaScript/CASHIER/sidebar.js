@@ -7,20 +7,17 @@ function toggleColor(button) {
     }
 }
 
-function toggleSelection(button) {
-    button.classList.toggle("selected");
-}
-
+// Calculate total function
 function calculateTotal() {
-    let orderItems = document.querySelectorAll(".order_item");
-    let totalAmount = 0;
-
-    orderItems.forEach(order => {
-        let priceText = order.querySelector("p:nth-child(3)").textContent;
-        let price = parseFloat(priceText.replace("Price: ₱", "").replace(" each", ""));
-
-        totalAmount += price;
+    const rows = document.querySelectorAll('#ordersTableBody tr td:last-child');
+    let total = 0;
+    
+    rows.forEach(cell => {
+        const price = parseFloat(cell.textContent.replace('₱', ''));
+        if (!isNaN(price)) {
+            total += price;
+        }
     });
-
-    document.getElementById("TOTAL").textContent = `TOTAL: ₱${totalAmount.toFixed(2)}`;
+    
+    document.getElementById('TOTAL').textContent = `₱${total.toFixed(2)}`;
 }

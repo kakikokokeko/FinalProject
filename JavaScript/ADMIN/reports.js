@@ -51,7 +51,13 @@ function initializeDataTable() {
         responsive: true,
         ajax: {
             url: 'Reports.php?action=get_sales_data',
-            dataSrc: ''
+            dataSrc: function(json) {
+                console.log('Received data:', json); // Debug log
+                return json.sales || [];
+            },
+            error: function(xhr, error, thrown) {
+                console.error('DataTables error:', error, thrown);
+            }
         },
         columns: [
             { data: 'date' },
@@ -60,26 +66,28 @@ function initializeDataTable() {
             { 
                 data: null,
                 render: function(data) {
-                    return parseFloat(data.quantity).toFixed(2) + ' ' + data.unit;
+                    return data.quantity ? parseFloat(data.quantity).toFixed(2) + ' ' + (data.unit || '') : '0.00';
                 }
             },
             { 
                 data: 'unit_price',
                 render: function(data) {
-                    return '₱' + parseFloat(data).toFixed(2);
+                    return '₱' + (data ? parseFloat(data).toFixed(2) : '0.00');
                 }
             },
             { 
                 data: 'total',
                 render: function(data) {
-                    return '₱' + parseFloat(data).toFixed(2);
+                    return '₱' + (data ? parseFloat(data).toFixed(2) : '0.00');
                 }
             }
         ],
         dom: '<"top"<"search-container"f>>rt<"bottom"p><"clear">',
         language: {
             search: "Search sales:",
-            emptyTable: "No sales records found"
+            emptyTable: "No sales records found",
+            loadingRecords: "Loading...",
+            processing: "Processing..."
         },
         initComplete: function() {
             $('.dataTables_filter input').attr('placeholder', 'Type to search...');
@@ -209,9 +217,21 @@ function initializeFilters() {
 }
 
 function updateChartData(period = 'daily') {
+    console.log('Updating chart with period:', period); // Debug log
     fetch(`Reports.php?action=get_chart_data&period=${period}`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Chart data received:', data); // Debug log
+            if (!Array.isArray(data)) {
+                console.error('Invalid data format received:', data);
+                return;
+            }
+
             const chartConfig = getChartConfig(period);
             
             // Update chart type and options
@@ -223,12 +243,14 @@ function updateChartData(period = 'daily') {
             salesChart.data.datasets[0] = {
                 ...salesChart.data.datasets[0],
                 ...chartConfig.datasetOptions,
-                data: data.map(item => parseFloat(item.total))
+                data: data.map(item => parseFloat(item.total) || 0)
             };
             
             salesChart.update();
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error updating chart:', error);
+        });
 }
 
 function getChartConfig(period) {
@@ -360,15 +382,28 @@ function getChartConfig(period) {
 }
 
 function loadSummaryCards() {
+    console.log('Loading summary cards'); // Debug log
     fetch('Reports.php?action=get_summary_data')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Summary data received:', data); // Debug log
+            if (data.error) {
+                console.error('Server error:', data.error);
+                return;
+            }
             updateSummaryCard('today', data.today);
             updateSummaryCard('weekly', data.weekly);
             updateSummaryCard('monthly', data.monthly);
             updateSummaryCard('orders', data.orders);
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error loading summary cards:', error);
+        });
 }
 
 function updateSummaryCard(type, data) {
@@ -396,6 +431,7 @@ function updateSummaryCard(type, data) {
 }
 
 function loadQuickSummary() {
+    console.log('Loading quick summary'); // Debug log
     const totalItems = document.querySelector('.summary-item strong');
 
     // Show loading state
@@ -408,12 +444,15 @@ function loadQuickSummary() {
     // Fetch with filter parameters
     fetch(`Reports.php?action=get_quick_summary&date_filter=${dateFilter}&category=${categoryFilter}`)
         .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
             return response.json();
         })
         .then(data => {
+            console.log('Quick summary data received:', data); // Debug log
             if (totalItems) {
-                totalItems.textContent = parseInt(data.totalItems).toLocaleString() + ' items';
+                totalItems.textContent = parseInt(data.totalItems || 0).toLocaleString() + ' items';
             }
         })
         .catch(error => {

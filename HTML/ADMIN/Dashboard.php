@@ -47,30 +47,30 @@
 		echo "<!-- Database connected successfully -->";
 
 		// First, let's check if we have any sales data
-		$checkQuery = "SELECT COUNT(*) as count FROM SalesDetails";
+		$checkQuery = "SELECT COUNT(*) as count FROM salesdetails";
 		$checkStmt = $conn->query($checkQuery);
 		$salesCount = $checkStmt->fetch(PDO::FETCH_ASSOC)['count'];
 		echo "<!-- Total sales records: " . $salesCount . " -->";
 
 		// Check Products table
-		$checkQuery = "SELECT COUNT(*) as count FROM Products";
+		$checkQuery = "SELECT COUNT(*) as count FROM products";
 		$checkStmt = $conn->query($checkQuery);
 		$productsCount = $checkStmt->fetch(PDO::FETCH_ASSOC)['count'];
 		echo "<!-- Total products: " . $productsCount . " -->";
 
 		// Check Categories table
-		$checkQuery = "SELECT COUNT(*) as count FROM Category";
+		$checkQuery = "SELECT COUNT(*) as count FROM category";
 		$checkStmt = $conn->query($checkQuery);
 		$categoriesCount = $checkStmt->fetch(PDO::FETCH_ASSOC)['count'];
 		echo "<!-- Total categories: " . $categoriesCount . " -->";
 
-		// Count total accounts
-		$checkQuery = "SELECT COUNT(*) as count FROM Account";
+		// Count total accounts (only active)
+		$checkQuery = "SELECT COUNT(*) as count FROM account WHERE status = 'active'";
 		$checkStmt = $conn->query($checkQuery);
 		$accountsCount = $checkStmt->fetch(PDO::FETCH_ASSOC)['count'] ?? 0;
 
-		// Get total sales amount
-		$salesAmountQuery = "SELECT SUM(total_amount) as total FROM Sales";
+		// Get total sales amount (only for today)
+		$salesAmountQuery = "SELECT SUM(total_amount) as total FROM sales WHERE DATE(transaction_date) = CURDATE()";
 		$salesAmountStmt = $conn->query($salesAmountQuery);
 		$totalSales = $salesAmountStmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
@@ -78,10 +78,10 @@
 		$query = "SELECT 
 			COALESCE(c.category_type, 'Uncategorized') as category_name,
 			SUM(sd.quantity) as total_quantity
-		FROM Products p
-		LEFT JOIN Category c ON p.category_code = c.category_code
-		LEFT JOIN SalesDetails sd ON p.prod_code = sd.prod_code
-		LEFT JOIN Sales s ON sd.sale_id = s.sale_id
+		FROM products p
+		LEFT JOIN category c ON p.category_code = c.category_code
+		LEFT JOIN salesdetails sd ON p.prod_code = sd.prod_code
+		LEFT JOIN sales s ON sd.sale_id = s.sale_id
 		WHERE 1=1";
 
 		// Add date filtering if dates are set

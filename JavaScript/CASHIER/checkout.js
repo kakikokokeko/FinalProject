@@ -7,7 +7,31 @@ function showCheckoutModal() {
 
     // Copy orders to checkout table
     const checkoutBody = document.getElementById('checkoutTableBody');
-    checkoutBody.innerHTML = tbody.innerHTML;
+    checkoutBody.innerHTML = '';  // Clear existing content
+
+    // Copy each row with data attributes
+    Array.from(tbody.children).forEach(row => {
+        const newRow = document.createElement('tr');
+        
+        // Copy the product name cell
+        const nameCell = document.createElement('td');
+        nameCell.textContent = row.cells[0].textContent;
+        newRow.appendChild(nameCell);
+        
+        // Copy the quantity cell with data attributes
+        const qtyCell = document.createElement('td');
+        qtyCell.textContent = row.cells[1].textContent;
+        qtyCell.setAttribute('data-actual-quantity', row.cells[1].getAttribute('data-actual-quantity'));
+        qtyCell.setAttribute('data-unit', row.cells[1].getAttribute('data-unit'));
+        newRow.appendChild(qtyCell);
+        
+        // Copy the price cell
+        const priceCell = document.createElement('td');
+        priceCell.textContent = row.cells[2].textContent;
+        newRow.appendChild(priceCell);
+        
+        checkoutBody.appendChild(newRow);
+    });
 
     // Set total amount
     const total = document.getElementById('TOTAL').textContent.replace('₱', '');
@@ -62,13 +86,14 @@ function processPayment() {
     
     for (let row of rows) {
         const productName = row.cells[0].textContent;
-        const quantity = parseFloat(row.cells[1].textContent.split(' ')[0]);
-        const unit = row.cells[1].textContent.split(' ')[1];
+        const quantityCell = row.cells[1];
+        const actualQuantity = parseFloat(quantityCell.getAttribute('data-actual-quantity'));
+        const unit = quantityCell.getAttribute('data-unit');
         const price = parseFloat(row.cells[2].textContent.replace('₱', ''));
         
         orders.push({
             product_name: productName,
-            quantity: quantity,
+            quantity: actualQuantity,
             unit: unit,
             price: price
         });

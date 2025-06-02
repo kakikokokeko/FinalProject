@@ -1,5 +1,12 @@
 <?php
 session_start();
+include("../LOGIN/database_config.php");
+
+// Check if user is logged in and is an admin
+if (!isset($_SESSION['acc_code']) || $_SESSION['acc_position'] !== 'Admin') {
+    header('Location: ../LOGIN/loginAdmin.php');
+    exit;
+}
 
 // Handle AJAX request for account search
 if (isset($_POST['action']) && $_POST['action'] === 'search') {
@@ -11,10 +18,10 @@ if (isset($_POST['action']) && $_POST['action'] === 'search') {
     }
 
     try {
-        $pdo = new PDO('mysql:host=localhost;dbname=DaMeatUp', 'root', '');
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        $stmt = $pdo->prepare("SELECT * FROM Account WHERE acc_code = ?");
+        $stmt = $conn->prepare("SELECT * FROM account WHERE acc_code = ? AND status = 'active'");
         $stmt->execute([$_POST['acc_code']]);
         
         $account = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -40,7 +47,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'search') {
     exit;
 }
 
-// Handle AJAX request for account deletion
+// Handle AJAX request for account deletion (soft delete)
 if (isset($_POST['action']) && $_POST['action'] === 'delete') {
     header('Content-Type: application/json');
     
@@ -50,25 +57,25 @@ if (isset($_POST['action']) && $_POST['action'] === 'delete') {
     }
 
     try {
-        $pdo = new PDO('mysql:host=localhost;dbname=DaMeatUp', 'root', '');
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        // Check if account exists
-        $checkStmt = $pdo->prepare("SELECT acc_code FROM Account WHERE acc_code = ?");
+        // Check if account exists and is active
+        $checkStmt = $conn->prepare("SELECT acc_code FROM account WHERE acc_code = ? AND status = 'active'");
         $checkStmt->execute([$_POST['acc_code']]);
         
         if (!$checkStmt->fetch()) {
-            echo json_encode(['success' => false, 'message' => 'Account not found']);
+            echo json_encode(['success' => false, 'message' => 'Account not found or already inactive']);
             exit;
         }
 
-        // Delete the account
-        $stmt = $pdo->prepare("DELETE FROM Account WHERE acc_code = ?");
+        // Soft delete by updating status to inactive
+        $stmt = $conn->prepare("UPDATE account SET status = 'inactive' WHERE acc_code = ?");
         $success = $stmt->execute([$_POST['acc_code']]);
         
         echo json_encode([
             'success' => $success,
-            'message' => $success ? 'Account deleted successfully' : 'Failed to delete account'
+            'message' => $success ? 'Account successfully deactivated' : 'Failed to deactivate account'
         ]);
         
     } catch(PDOException $e) {
@@ -85,13 +92,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $response = ['success' => false, 'message' => ''];
     
     try {
-        $pdo = new PDO('mysql:host=localhost;dbname=DaMeatUp', 'root', '');
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
         // Handle account update
         if (isset($_POST['action']) && $_POST['action'] === 'update') {
             // Start building the SQL query and parameters
-            $sql = "UPDATE Account SET 
+            $sql = "UPDATE account SET 
                     first_name = ?,
                     last_name = ?,
                     acc_position = ?,
@@ -119,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $sql .= " WHERE acc_code = ?";
             $params[] = $_POST['acc_code'];
 
-            $stmt = $pdo->prepare($sql);
+            $stmt = $conn->prepare($sql);
             $success = $stmt->execute($params);
 
             $_SESSION['form_success'] = $success;
@@ -134,7 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception("Account Code must be a number");
         }
 
-        $checkStmt = $pdo->prepare("SELECT acc_code FROM Account WHERE acc_code = ?");
+        $checkStmt = $conn->prepare("SELECT acc_code FROM account WHERE acc_code = ?");
         $checkStmt->execute([$_POST['acc_code']]);
         
         if ($checkStmt->fetch()) {
@@ -142,7 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Optional: check if username is unique
-        $usernameCheck = $pdo->prepare("SELECT username FROM Account WHERE username = ?");
+        $usernameCheck = $conn->prepare("SELECT username FROM account WHERE username = ?");
         $usernameCheck->execute([$_POST['username']]);
         if ($usernameCheck->fetch()) {
             throw new Exception("Username already exists");
@@ -151,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Hash password
         $hashedPassword = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
-        $stmt = $pdo->prepare("INSERT INTO Account 
+        $stmt = $conn->prepare("INSERT INTO account 
             (acc_code, first_name, last_name, acc_position, acc_address, gender, acc_contact, username, password) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
@@ -187,7 +194,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 //-----------------------------------------------------------------------DISPLAY TABLE---------------------------------------------------------------------
 $accounts = [];
 try {
-    $pdo = new PDO('mysql:host=localhost;dbname=DaMeatUp', 'root', '');
+    $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
     
     // Get sort parameters
     $sort_column = isset($_GET['sort']) ? $_GET['sort'] : 'acc_code';
@@ -205,8 +212,9 @@ try {
         $order_clause = "first_name $sort_order, last_name";
     }
     
-    $stmt = $pdo->query("SELECT acc_code, CONCAT(first_name, ' ', last_name) AS full_name, username, acc_position 
-                         FROM Account 
+    $stmt = $conn->query("SELECT acc_code, CONCAT(first_name, ' ', last_name) AS full_name, username, acc_position 
+                         FROM account 
+                         WHERE status = 'active'
                          ORDER BY $order_clause $sort_order");
     $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch(PDOException $e) {

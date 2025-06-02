@@ -1,19 +1,20 @@
 <?php
 session_start();
+include("database_config.php");
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = $_POST['username'] ?? '';
-    $password = $_POST['password'] ?? '';
+    $input_username = $_POST['username'] ?? '';
+    $input_password = $_POST['password'] ?? '';
 
     try {
-        $pdo = new PDO('mysql:host=localhost;dbname=DaMeatUp', 'root', '');
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        $stmt = $pdo->prepare("SELECT * FROM Account WHERE username = ? AND acc_position = 'Cashier'");
-        $stmt->execute([$username]);
+        $stmt = $conn->prepare("SELECT * FROM account WHERE username = ? AND acc_position = 'Cashier'");
+        $stmt->execute([$input_username]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($user && password_verify($password, $user['password'])) {
+        if ($user && password_verify($input_password, $user['password'])) {
             $_SESSION['acc_code'] = $user['acc_code'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['name'] = $user['first_name'] . ' ' . $user['last_name'];

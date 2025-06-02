@@ -1,5 +1,6 @@
 <?php
 session_start();
+include("../../HTML/LOGIN/database_config.php");
 header('Content-Type: application/json');
 
 // Check if user is logged in
@@ -9,12 +10,12 @@ if (!isset($_SESSION['acc_code']) || $_SESSION['acc_position'] !== 'Cashier') {
 }
 
 try {
-    $pdo = new PDO('mysql:host=localhost;dbname=DaMeatUp', 'root', '');
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     if (isset($_GET['order_id'])) {
         // Fetch specific order details
-        $stmt = $pdo->prepare("
+        $stmt = $conn->prepare("
             SELECT 
                 s.sale_id,
                 s.transaction_date,
@@ -26,10 +27,10 @@ try {
                 sd.quantity,
                 sd.unit_price,
                 (sd.quantity * sd.unit_price) as item_total
-            FROM Sales s
-            JOIN Account a ON s.cashier_code = a.acc_code
-            JOIN SalesDetails sd ON s.sale_id = sd.sale_id
-            JOIN Products p ON sd.prod_code = p.prod_code
+            FROM sales s
+            JOIN account a ON s.cashier_code = a.acc_code
+            JOIN salesdetails sd ON s.sale_id = sd.sale_id
+            JOIN products p ON sd.prod_code = p.prod_code
             WHERE s.sale_id = ?
         ");
         $stmt->execute([$_GET['order_id']]);
@@ -65,7 +66,7 @@ try {
             }
         }
 
-        $stmt = $pdo->prepare("
+        $stmt = $conn->prepare("
             SELECT 
                 s.sale_id,
                 s.transaction_date,
@@ -73,8 +74,8 @@ try {
                 s.cash_amount,
                 s.change_amount,
                 CONCAT(a.first_name, ' ', a.last_name) as cashier_name
-            FROM Sales s
-            JOIN Account a ON s.cashier_code = a.acc_code
+            FROM sales s
+            JOIN account a ON s.cashier_code = a.acc_code
             $whereClause
             ORDER BY s.transaction_date DESC
             LIMIT 100

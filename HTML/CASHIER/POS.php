@@ -10,12 +10,12 @@ if (!isset($_SESSION['acc_code']) || $_SESSION['acc_position'] !== 'Cashier') {
 
 // Fetch all products from database
 try {
-    $pdo = new PDO('mysql:host=localhost;dbname=DaMeatUp', 'root', '');
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
-    $stmt = $pdo->query("SELECT p.*, c.category_type 
-                         FROM Products p 
-                         LEFT JOIN Category c ON p.category_code = c.category_code 
+    $stmt = $conn->query("SELECT p.*, c.category_type 
+                         FROM products p 
+                         LEFT JOIN category c ON p.category_code = c.category_code 
                          ORDER BY p.prod_name");
     $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch(PDOException $e) {
@@ -93,10 +93,6 @@ try {
               </div>
 
               <div class="sidebarbttn-container">
-                  <div class="sidebarbttn">
-                      <button id="select" onclick="toggleSelection(this)">Select</button>
-                  </div>
-
                   <div class="container_button">
                       <div class="button-wrapper">
                           <button class="buttons" onclick="editSelected()">

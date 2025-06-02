@@ -9,6 +9,14 @@ ob_start();
 // Start session
 session_start();
 
+// Include database configuration
+include("../../HTML/LOGIN/database_config.php");
+
+// Add cache control headers
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+
 // Handle AJAX requests first, before any HTML output
 if (isset($_POST['action'])) {
     // Clear any previous output
@@ -17,8 +25,8 @@ if (isset($_POST['action'])) {
     header('Content-Type: application/json');
     
     try {
-        $pdo = new PDO('mysql:host=localhost;dbname=DaMeatUp', 'root', '');
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         
         switch ($_POST['action']) {
             case 'search':
@@ -26,10 +34,10 @@ if (isset($_POST['action'])) {
                     throw new Exception('Product code is required');
                 }
                 
-                $stmt = $pdo->prepare("SELECT p.*, c.category_type 
-                                     FROM Products p 
-                                     LEFT JOIN Category c ON p.category_code = c.category_code 
-                                     WHERE p.prod_code = ?");
+                $stmt = $conn->prepare("SELECT p.*, c.category_type 
+                                     FROM products p 
+                                     LEFT JOIN category c ON p.category_code = c.category_code 
+                                     WHERE p.prod_code = ? AND p.status = 'active'");
                 $stmt->execute([$_POST['prod_code']]);
                 $product = $stmt->fetch(PDO::FETCH_ASSOC);
                 
@@ -51,38 +59,22 @@ if (isset($_POST['action'])) {
                     throw new Exception('Product code is required');
                 }
 
-                // Check if product exists
-                $checkStmt = $pdo->prepare("SELECT prod_code FROM Products WHERE prod_code = ?");
+                // Check if product exists and is active
+                $checkStmt = $conn->prepare("SELECT prod_code FROM products WHERE prod_code = ? AND status = 'active'");
                 $checkStmt->execute([$_POST['prod_code']]);
                 
                 if (!$checkStmt->fetch()) {
-                    throw new Exception('Product not found');
+                    throw new Exception('Product not found or already inactive');
                 }
 
-                // Start transaction
-                $pdo->beginTransaction();
+                // Soft delete by updating status to inactive
+                $stmt = $conn->prepare("UPDATE products SET status = 'inactive' WHERE prod_code = ?");
+                $success = $stmt->execute([$_POST['prod_code']]);
                 
-                try {
-                    // First delete related records in salesdetails
-                    $deleteDetailsStmt = $pdo->prepare("DELETE FROM SalesDetails WHERE prod_code = ?");
-                    $deleteDetailsStmt->execute([$_POST['prod_code']]);
-                    
-                    // Then delete the product
-                    $deleteProductStmt = $pdo->prepare("DELETE FROM Products WHERE prod_code = ?");
-                    $deleteProductStmt->execute([$_POST['prod_code']]);
-                    
-                    // Commit the transaction
-                    $pdo->commit();
-                    
-                    echo json_encode([
-                        'success' => true,
-                        'message' => 'Product and related sales records deleted successfully'
-                    ]);
-                } catch (Exception $e) {
-                    // Rollback on error
-                    $pdo->rollBack();
-                    throw new Exception('Failed to delete product: ' . $e->getMessage());
-                }
+                echo json_encode([
+                    'success' => $success,
+                    'message' => $success ? 'Product successfully deactivated' : 'Failed to deactivate product'
+                ]);
                 break;
                 
             case 'update':
@@ -92,7 +84,7 @@ if (isset($_POST['action'])) {
                 }
 
                 // Start building the SQL query and parameters
-                $sql = "UPDATE Products SET 
+                $sql = "UPDATE products SET 
                     prod_name = ?,
                     prod_price = ?,
                     stock_atty = ?,
@@ -131,7 +123,7 @@ if (isset($_POST['action'])) {
                 $sql .= " WHERE prod_code = ?";
                 $params[] = $_POST['prod_code'];
 
-                $stmt = $pdo->prepare($sql);
+                $stmt = $conn->prepare($sql);
                 $success = $stmt->execute($params);
                 
                 echo json_encode([
@@ -159,21 +151,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $response = ['success' => false, 'message' => ''];
     
     try {
-        $pdo = new PDO('mysql:host=localhost;dbname=DaMeatUp', 'root', '');
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
         // Get next product code
-        $pdo->beginTransaction();
+        $conn->beginTransaction();
         
         // Get and increment the counter for the specific category
         $category_code = $_POST['category_code'];
-        $stmt = $pdo->prepare("SELECT next_value FROM ProductCounter WHERE category_code = ? FOR UPDATE");
+        $stmt = $conn->prepare("SELECT next_value FROM productcounter WHERE category_code = ? FOR UPDATE");
         $stmt->execute([$category_code]);
         $next_value = $stmt->fetchColumn();
         $next_value++;
         
         // Update the counter for this category
-        $updateStmt = $pdo->prepare("UPDATE ProductCounter SET next_value = ? WHERE category_code = ?");
+        $updateStmt = $conn->prepare("UPDATE productcounter SET next_value = ? WHERE category_code = ?");
         $updateStmt->execute([$next_value, $category_code]);
         
         // Format the product code (e.g., 1001, 2001, etc.)
@@ -200,7 +192,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        $stmt = $pdo->prepare("INSERT INTO Products 
+        $stmt = $conn->prepare("INSERT INTO products 
             (prod_code, prod_name, prod_price, stock_atty, stock_unit, category_code, image_path) 
             VALUES (?, ?, ?, ?, ?, ?, ?)");
 
@@ -215,22 +207,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
 
         if ($success) {
-            $pdo->commit();
+            $conn->commit();
             $response['success'] = true;
             $response['message'] = 'Product added successfully! Product Code: ' . $prod_code;
         } else {
-            $pdo->rollBack();
+            $conn->rollBack();
             $response['message'] = 'Failed to add product';
         }
         
     } catch(PDOException $e) {
-        if (isset($pdo)) {
-            $pdo->rollBack();
+        if (isset($conn)) {
+            $conn->rollBack();
         }
         $response['message'] = 'Database Error: ' . $e->getMessage();
     } catch(Exception $e) {
-        if (isset($pdo)) {
-            $pdo->rollBack();
+        if (isset($conn)) {
+            $conn->rollBack();
         }
         $response['message'] = $e->getMessage();
     }
@@ -254,8 +246,8 @@ if ($has_message) {
 // Fetch products from database
 $products = [];
 try {
-    $pdo = new PDO('mysql:host=localhost;dbname=DaMeatUp', 'root', '');
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     // Get sort parameters
     $sort_column = isset($_GET['sort']) ? $_GET['sort'] : 'prod_code';
@@ -268,14 +260,15 @@ try {
     }
     
     // Fetch products with category information
-    $stmt = $pdo->query("SELECT p.*, c.category_type 
-                        FROM Products p 
-                        LEFT JOIN Category c ON p.category_code = c.category_code 
+    $stmt = $conn->query("SELECT p.*, c.category_type 
+                        FROM products p 
+                        LEFT JOIN category c ON p.category_code = c.category_code 
+                        WHERE p.status = 'active'
                         ORDER BY $sort_column $sort_order");
     $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Fetch categories for filter dropdown
-    $stmt = $pdo->query("SELECT * FROM Category ORDER BY category_type");
+    $stmt = $conn->query("SELECT * FROM category ORDER BY category_type");
     $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch(PDOException $e) {
     echo "<script>alert('Error loading products: " . addslashes($e->getMessage()) . "');</script>";
@@ -298,13 +291,13 @@ $current_order = isset($_GET['order']) ? $_GET['order'] : 'ASC';
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="initial-scale=1, width=device-width">
-    <link rel="stylesheet" href="../../CSS/ADMIN/styleAdminInventory.css" />
-    <link rel="stylesheet" href="../../CSS/ADMIN/logoutModal.css" />
+    <link rel="stylesheet" href="../../CSS/ADMIN/styleAdminInventory.css?v=<?php echo time(); ?>" />
+    <link rel="stylesheet" href="../../CSS/ADMIN/logoutModal.css?v=<?php echo time(); ?>" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
-    <script src="../../JavaScript/ADMIN/admin.js" defer></script>
-    <script src="../../JavaScript/ADMIN/adminInventory.js" defer></script>
+    <script src="../../JavaScript/ADMIN/admin.js?v=<?php echo time(); ?>" defer></script>
+    <script src="../../JavaScript/ADMIN/adminInventory.js?v=<?php echo time(); ?>" defer></script>
     <title>Admin Inventory</title>
     <link rel="icon" href="../../pics/logo.png" sizes="any">
 </head>
@@ -604,22 +597,115 @@ $current_order = isset($_GET['order']) ? $_GET['order'] : 'ASC';
 
                 <!-- Delete Product Popup -->
                 <div id="deleteProductPopup" class="popup-form" onclick="closePopupOnOutsideClick(event, 'deleteProductPopup')">
-                    <div class="form-container delete-form">
+                    <div class="form-container">
                         <div class="popup-header">
                             <h2>Delete Product</h2>
                             <button type="button" class="close-btn" onclick="closeDeleteProductForm()">&times;</button>
                         </div>
-                        <div class="form-section" style="margin-bottom: 0;">
+                        <div class="form-section">
+                            <div class="image-upload-container">
+                                <div class="circular-image-upload">
+                                    <img id="delete_preview_image" src="../../pics/admin_icons/inventory.png" alt="Product Image">
+                                </div>
+                            </div>
+
+                            <h3>Product Information</h3>
+                            
                             <div class="form-group">
-                                <label>Enter Product Code to Delete:</label>
+                                <label>Product Code</label>
                                 <div class="search-code-container">
                                     <input type="text" id="delete_prod_code" required pattern="\d+" title="Product code must be numbers only" placeholder="Enter product code">
+                                    <button type="button" onclick="searchProductForDeletion()" class="btn-search">Search</button>
+                                </div>
+                            </div>
+
+                            <div id="delete-form-fields" style="display: none;">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Name</label>
+                                        <input type="text" id="delete_prod_name" readonly>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Price</label>
+                                        <input type="text" id="delete_prod_price" readonly>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Stock Amount</label>
+                                        <input type="text" id="delete_stock_atty" readonly>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Unit</label>
+                                        <input type="text" id="delete_stock_unit" readonly>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Category</label>
+                                        <input type="text" id="delete_category" readonly>
+                                    </div>
+                                </div>
+
+                                <div class="warning-message">
+                                    <p>Are you sure you want to delete this product? This action cannot be undone.</p>
+                                </div>
+                                
+                                <div class="form-actions">
+                                    <button type="button" class="btn-danger" onclick="deleteProduct()">Delete Product</button>
+                                    <button type="button" class="btn-secondary" onclick="closeDeleteProductForm()">Cancel</button>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Delete Confirmation Modal -->
+                <div id="deleteConfirmationModal" class="popup-form">
+                    <div class="form-container">
+                        <div class="popup-header">
+                            <h2>Confirm Deletion</h2>
+                            <button type="button" class="close-btn" onclick="closeDeleteConfirmation()">&times;</button>
+                        </div>
+                        <div class="details-container">
+                            <div class="product-image-container">
+                                <img id="delete_product_image" src="../../pics/admin_icons/inventory.png" alt="Product Image">
+                            </div>
+                            <div class="details-info">
+                                <div class="details-row">
+                                    <div class="details-label">Product Code:</div>
+                                    <div id="delete_details_prod_code" class="details-value"></div>
+                                </div>
+                                <div class="details-row">
+                                    <div class="details-label">Name:</div>
+                                    <div id="delete_details_prod_name" class="details-value"></div>
+                                </div>
+                                <div class="details-row">
+                                    <div class="details-label">Price:</div>
+                                    <div id="delete_details_prod_price" class="details-value"></div>
+                                </div>
+                                <div class="details-row">
+                                    <div class="details-label">Stock:</div>
+                                    <div id="delete_details_stock" class="details-value"></div>
+                                </div>
+                                <div class="details-row">
+                                    <div class="details-label">Unit:</div>
+                                    <div id="delete_details_unit" class="details-value"></div>
+                                </div>
+                                <div class="details-row">
+                                    <div class="details-label">Category:</div>
+                                    <div id="delete_details_category" class="details-value"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="warning-message">
+                            <p>Are you sure you want to delete this product? This action cannot be undone.</p>
+                        </div>
                         <div class="form-actions">
-                            <button type="button" class="btn-primary" onclick="confirmDeleteProduct()">Delete Product</button>
-                            <button type="button" class="btn-secondary" onclick="closeDeleteProductForm()">Cancel</button>
+                            <button type="button" class="btn-danger" onclick="deleteProduct()">Delete Product</button>
+                            <button type="button" class="btn-secondary" onclick="closeDeleteConfirmation()">Cancel</button>
                         </div>
                     </div>
                 </div>

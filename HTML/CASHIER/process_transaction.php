@@ -1,5 +1,6 @@
 <?php
 session_start();
+include("../../HTML/LOGIN/database_config.php");
 header('Content-Type: application/json');
 
 // Check if user is logged in
@@ -18,19 +19,19 @@ if (!$data) {
 }
 
 try {
-    $pdo = new PDO('mysql:host=localhost;dbname=DaMeatUp', 'root', '');
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $pdo->beginTransaction();
+    $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $conn->beginTransaction();
 
     // Insert into Sales table
-    $stmt = $pdo->prepare("INSERT INTO Sales (cashier_code, total_amount, cash_amount, change_amount, transaction_date) VALUES (?, ?, ?, ?, NOW())");
+    $stmt = $conn->prepare("INSERT INTO sales (cashier_code, total_amount, cash_amount, change_amount, transaction_date) VALUES (?, ?, ?, ?, NOW())");
     $stmt->execute([$_SESSION['acc_code'], $data['total_amount'], $data['cash_amount'], $data['change_amount']]);
-    $saleId = $pdo->lastInsertId();
+    $saleId = $conn->lastInsertId();
 
     // Process each order item
     foreach ($data['orders'] as $order) {
         // Get product details
-        $stmt = $pdo->prepare("SELECT prod_code, stock_atty FROM Products WHERE prod_name = ?");
+        $stmt = $conn->prepare("SELECT prod_code, stock_atty, stock_unit FROM products WHERE prod_name = ?");
         $stmt->execute([$order['product_name']]);
         $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -38,26 +39,29 @@ try {
             throw new Exception("Product not found: " . $order['product_name']);
         }
 
-        // Check if enough stock
-        if ($product['stock_atty'] < $order['quantity']) {
+        // Convert quantity to proper unit if needed
+        $deductQuantity = $order['quantity'];
+        
+        // Check if enough stock (using proper decimal comparison)
+        if (bccomp((string)$product['stock_atty'], (string)$deductQuantity, 3) < 0) {
             throw new Exception("Insufficient stock for: " . $order['product_name']);
         }
 
         // Insert into SalesDetails
-        $stmt = $pdo->prepare("INSERT INTO SalesDetails (sale_id, prod_code, quantity, unit_price) VALUES (?, ?, ?, ?)");
-        $stmt->execute([$saleId, $product['prod_code'], $order['quantity'], $order['price'] / $order['quantity']]);
+        $stmt = $conn->prepare("INSERT INTO salesdetails (sale_id, prod_code, quantity, unit_price) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$saleId, $product['prod_code'], $deductQuantity, $order['price'] / $order['quantity']]);
 
-        // Update product quantity
-        $stmt = $pdo->prepare("UPDATE Products SET stock_atty = stock_atty - ? WHERE prod_code = ?");
-        $stmt->execute([$order['quantity'], $product['prod_code']]);
+        // Update product quantity using proper decimal arithmetic
+        $stmt = $conn->prepare("UPDATE products SET stock_atty = stock_atty - ? WHERE prod_code = ?");
+        $stmt->execute([$deductQuantity, $product['prod_code']]);
     }
 
-    $pdo->commit();
+    $conn->commit();
     echo json_encode(['success' => true]);
 
 } catch (Exception $e) {
-    if (isset($pdo)) {
-        $pdo->rollBack();
+    if (isset($conn)) {
+        $conn->rollBack();
     }
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 } 

@@ -16,9 +16,20 @@ if (isset($_GET['action'])) {
         $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
         $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         
+        // Test query to verify database connectivity
+        $test_query = "SELECT COUNT(*) as count FROM sales";
+        $test_stmt = $conn->prepare($test_query);
+        $test_stmt->execute();
+        $test_result = $test_stmt->fetch(PDO::FETCH_ASSOC);
+        error_log("Database connection test - Total sales count: " . $test_result['count']);
+        
+        // Add debug logging
+        error_log("Database connection successful");
+        
         switch ($_GET['action']) {
             case 'get_sales_data':
-                // Get sales data
+                error_log("Executing get_sales_data query");
+                // Get sales data for the table
                 $query = "SELECT 
                     DATE_FORMAT(s.transaction_date, '%Y-%m-%d') as date,
                     s.sale_id as order_id,
@@ -28,14 +39,30 @@ if (isset($_GET['action'])) {
                     sd.unit_price,
                     (sd.quantity * sd.unit_price) as total,
                     'Cash' as payment_method
-                FROM Sales s
-                JOIN SalesDetails sd ON s.sale_id = sd.sale_id
-                JOIN Products p ON sd.prod_code = p.prod_code
+                FROM sales s
+                JOIN salesdetails sd ON s.sale_id = sd.sale_id
+                JOIN products p ON sd.prod_code = p.prod_code
                 ORDER BY s.transaction_date DESC";
 
                 $stmt = $conn->prepare($query);
                 $stmt->execute();
-                echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+                $sales = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                error_log("Sales data count: " . count($sales));
+
+                // Get total items sold
+                $query = "SELECT COALESCE(SUM(sd.quantity), 0) as total_items 
+                         FROM salesdetails sd
+                         JOIN sales s ON sd.sale_id = s.sale_id";
+
+                $stmt = $conn->prepare($query);
+                $stmt->execute();
+                $total_items = $stmt->fetch(PDO::FETCH_ASSOC)['total_items'];
+                error_log("Total items: " . $total_items);
+
+                echo json_encode([
+                    'sales' => $sales,
+                    'total_items' => $total_items
+                ]);
                 break;
 
             case 'get_filtered_sales':
@@ -73,12 +100,13 @@ if (isset($_GET['action'])) {
                     s.sale_id as order_id,
                     p.prod_name as product,
                     sd.quantity,
+                    p.stock_unit as unit,
                     sd.unit_price,
                     (sd.quantity * sd.unit_price) as total,
                     'Cash' as payment_method
-                FROM Sales s
-                JOIN SalesDetails sd ON s.sale_id = sd.sale_id
-                JOIN Products p ON sd.prod_code = p.prod_code";
+                FROM sales s
+                JOIN salesdetails sd ON s.sale_id = sd.sale_id
+                JOIN products p ON sd.prod_code = p.prod_code";
 
                 if (!empty($where_clauses)) {
                     $query .= " WHERE " . implode(" AND ", $where_clauses);
@@ -95,7 +123,9 @@ if (isset($_GET['action'])) {
                 break;
 
             case 'get_chart_data':
+                error_log("Executing get_chart_data query");
                 $period = $_GET['period'] ?? 'daily';
+                error_log("Chart period: " . $period);
                 $query = "";
 
                 switch ($period) {
@@ -109,8 +139,8 @@ if (isset($_GET['action'])) {
                             SELECT CURDATE() - INTERVAL (a.a) DAY as date
                             FROM (SELECT 0 as a UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6) as a
                         ) dates
-                        LEFT JOIN Sales s ON DATE(s.transaction_date) = dates.date
-                        LEFT JOIN SalesDetails sd ON s.sale_id = sd.sale_id
+                        LEFT JOIN sales s ON DATE(s.transaction_date) = dates.date
+                        LEFT JOIN salesdetails sd ON s.sale_id = sd.sale_id
                         GROUP BY dates.date
                         ORDER BY dates.date";
                         break;
@@ -127,8 +157,8 @@ if (isset($_GET['action'])) {
                                   UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 
                                   UNION SELECT 9 UNION SELECT 10 UNION SELECT 11) as a
                         ) dates
-                        LEFT JOIN Sales s ON WEEK(s.transaction_date) = WEEK(dates.date)
-                        LEFT JOIN SalesDetails sd ON s.sale_id = sd.sale_id
+                        LEFT JOIN sales s ON WEEK(s.transaction_date) = WEEK(dates.date)
+                        LEFT JOIN salesdetails sd ON s.sale_id = sd.sale_id
                         GROUP BY WEEK(dates.date)
                         ORDER BY dates.date";
                         break;
@@ -145,9 +175,9 @@ if (isset($_GET['action'])) {
                                   UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 
                                   UNION SELECT 9 UNION SELECT 10 UNION SELECT 11) as a
                         ) dates
-                        LEFT JOIN Sales s ON MONTH(s.transaction_date) = MONTH(dates.date) 
+                        LEFT JOIN sales s ON MONTH(s.transaction_date) = MONTH(dates.date) 
                             AND YEAR(s.transaction_date) = YEAR(dates.date)
-                        LEFT JOIN SalesDetails sd ON s.sale_id = sd.sale_id
+                        LEFT JOIN salesdetails sd ON s.sale_id = sd.sale_id
                         GROUP BY YEAR(dates.date), MONTH(dates.date)
                         ORDER BY dates.date";
                         break;
@@ -162,8 +192,8 @@ if (isset($_GET['action'])) {
                             SELECT DATE_SUB(CURDATE(), INTERVAL (a.a) YEAR) as date
                             FROM (SELECT 0 as a UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4) as a
                         ) dates
-                        LEFT JOIN Sales s ON YEAR(s.transaction_date) = YEAR(dates.date)
-                        LEFT JOIN SalesDetails sd ON s.sale_id = sd.sale_id
+                        LEFT JOIN sales s ON YEAR(s.transaction_date) = YEAR(dates.date)
+                        LEFT JOIN salesdetails sd ON s.sale_id = sd.sale_id
                         GROUP BY YEAR(dates.date)
                         ORDER BY dates.date";
                         break;
@@ -175,16 +205,17 @@ if (isset($_GET['action'])) {
                 break;
 
             case 'get_summary_data':
+                error_log("Executing get_summary_data query");
                 // Today's sales
                 $query = "SELECT 
                     COALESCE(SUM(sd.quantity * sd.unit_price), 0) as today_sales,
                     (SELECT COALESCE(SUM(sd2.quantity * sd2.unit_price), 0)
-                     FROM Sales s2
-                     JOIN SalesDetails sd2 ON s2.sale_id = sd2.sale_id
+                     FROM sales s2
+                     JOIN salesdetails sd2 ON s2.sale_id = sd2.sale_id
                      WHERE DATE(s2.transaction_date) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
                     ) as yesterday_sales
-                FROM Sales s
-                JOIN SalesDetails sd ON s.sale_id = sd.sale_id
+                FROM sales s
+                JOIN salesdetails sd ON s.sale_id = sd.sale_id
                 WHERE DATE(s.transaction_date) = CURDATE()";
 
                 $stmt = $conn->prepare($query);
@@ -198,13 +229,13 @@ if (isset($_GET['action'])) {
                 // Weekly sales
                 $query = "SELECT 
                     (SELECT COALESCE(SUM(sd1.quantity * sd1.unit_price), 0)
-                     FROM Sales s1
-                     JOIN SalesDetails sd1 ON s1.sale_id = sd1.sale_id
+                     FROM sales s1
+                     JOIN salesdetails sd1 ON s1.sale_id = sd1.sale_id
                      WHERE s1.transaction_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
                     ) as this_week,
                     (SELECT COALESCE(SUM(sd2.quantity * sd2.unit_price), 0)
-                     FROM Sales s2
-                     JOIN SalesDetails sd2 ON s2.sale_id = sd2.sale_id
+                     FROM sales s2
+                     JOIN salesdetails sd2 ON s2.sale_id = sd2.sale_id
                      WHERE s2.transaction_date BETWEEN DATE_SUB(CURDATE(), INTERVAL 14 DAY) AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)
                     ) as last_week";
 
@@ -219,13 +250,13 @@ if (isset($_GET['action'])) {
                 // Monthly sales
                 $query = "SELECT 
                     (SELECT COALESCE(SUM(sd1.quantity * sd1.unit_price), 0)
-                     FROM Sales s1
-                     JOIN SalesDetails sd1 ON s1.sale_id = sd1.sale_id
+                     FROM sales s1
+                     JOIN salesdetails sd1 ON s1.sale_id = sd1.sale_id
                      WHERE s1.transaction_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
                     ) as this_month,
                     (SELECT COALESCE(SUM(sd2.quantity * sd2.unit_price), 0)
-                     FROM Sales s2
-                     JOIN SalesDetails sd2 ON s2.sale_id = sd2.sale_id
+                     FROM sales s2
+                     JOIN salesdetails sd2 ON s2.sale_id = sd2.sale_id
                      WHERE s2.transaction_date BETWEEN DATE_SUB(CURDATE(), INTERVAL 60 DAY) AND DATE_SUB(CURDATE(), INTERVAL 30 DAY)
                     ) as last_month";
 
@@ -239,13 +270,13 @@ if (isset($_GET['action'])) {
 
                 // Total orders today
                 $query = "SELECT 
-                    COUNT(*) as today_orders,
-                    (SELECT COUNT(*)
-                     FROM Sales
-                     WHERE DATE(transaction_date) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                    COUNT(DISTINCT s.sale_id) as today_orders,
+                    (SELECT COUNT(DISTINCT s2.sale_id)
+                     FROM sales s2
+                     WHERE DATE(s2.transaction_date) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
                     ) as yesterday_orders
-                FROM Sales
-                WHERE DATE(transaction_date) = CURDATE()";
+                FROM sales s
+                WHERE DATE(s.transaction_date) = CURDATE()";
 
                 $stmt = $conn->prepare($query);
                 $stmt->execute();
@@ -302,9 +333,9 @@ if (isset($_GET['action'])) {
                 // Total items sold
                 $query = "SELECT 
                     COALESCE(SUM(sd.quantity), 0) as total_items 
-                FROM SalesDetails sd
-                JOIN Sales s ON sd.sale_id = s.sale_id
-                JOIN Products p ON sd.prod_code = p.prod_code
+                FROM salesdetails sd
+                JOIN sales s ON sd.sale_id = s.sale_id
+                JOIN products p ON sd.prod_code = p.prod_code
                 " . ($date_condition ? $date_condition : "") . "
                 " . $category_condition;
 
@@ -321,7 +352,11 @@ if (isset($_GET['action'])) {
                 break;
         }
     } catch(PDOException $e) {
+        error_log("Database Error: " . $e->getMessage());
         echo json_encode(['error' => $e->getMessage()]);
+    } catch(Exception $e) {
+        error_log("General Error: " . $e->getMessage());
+        echo json_encode(['error' => 'An unexpected error occurred']);
     }
     
     exit;
@@ -346,6 +381,17 @@ if (isset($_GET['action'])) {
     <link rel="icon" href="../../pics/logo.png" sizes="any">
     <script src="../../JavaScript/ADMIN/admin.js" defer></script>
     <script src="../../JavaScript/ADMIN/reports.js" defer></script>
+    <script>
+    // Add this before the other script includes
+    function logError(error) {
+        console.error('Error:', error);
+    }
+    
+    window.onerror = function(msg, url, line) {
+        console.error('JavaScript error: ', msg, 'at', url, ':', line);
+        return false;
+    };
+    </script>
 </head>
 <body>
 <div class="main-container">
@@ -377,17 +423,17 @@ if (isset($_GET['action'])) {
             <button id="close-sidebar" class="close-sidebar">
                 <i class="fas fa-times"></i>
             </button>
-            <div class="sidebar-item" onclick="window.location.href='dashboard.php'">
+            <div class="sidebar-item" onclick="dashboard()">
                 <img class="sidebarLogo" src="../../pics/admin_icons/dashboard.png" alt="Dashboard Icon">
                 <button class="bttn">Dashboard</button>
             </div>
 
-            <div class="sidebar-item" onclick="window.location.href='accounts.php'">
+            <div class="sidebar-item" onclick="account()">
                 <img class="sidebarLogo" src="../../pics/admin_icons/account.png" alt="Accounts Icon">
                 <button class="bttn">Accounts</button>
             </div>
 
-            <div class="sidebar-item" onclick="window.location.href='inventory.php'">
+            <div class="sidebar-item" onclick="inventory()">
                 <img class="sidebarLogo" src="../../pics/admin_icons/inventory.png" alt="Inventory Icon">
                 <button class="bttn">Inventory</button>
             </div>
