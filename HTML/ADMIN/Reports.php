@@ -1,6 +1,9 @@
 <?php
 session_start();
-require_once '../LOGIN/database_config.php';
+include("../../HTML/LOGIN/database_config.php");
+
+// Set timezone to Asia/Manila (Philippines)
+date_default_timezone_set('Asia/Manila');
 
 // Function to calculate percentage change
 function calculateChange($current, $previous) {
@@ -16,6 +19,9 @@ if (isset($_GET['action'])) {
         $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
         $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         
+        // Set timezone for database connection
+        $conn->exec("SET time_zone = '+08:00'");
+
         // Test query to verify database connectivity
         $test_query = "SELECT COUNT(*) as count FROM sales";
         $test_stmt = $conn->prepare($test_query);
@@ -31,7 +37,7 @@ if (isset($_GET['action'])) {
                 error_log("Executing get_sales_data query");
                 // Get sales data for the table
                 $query = "SELECT 
-                    DATE_FORMAT(s.transaction_date, '%Y-%m-%d') as date,
+                    DATE_FORMAT(CONVERT_TZ(s.transaction_date, '+00:00', '+08:00'), '%Y-%m-%d') as date,
                     s.sale_id as order_id,
                     p.prod_name as product,
                     sd.quantity,
@@ -42,7 +48,7 @@ if (isset($_GET['action'])) {
                 FROM sales s
                 JOIN salesdetails sd ON s.sale_id = sd.sale_id
                 JOIN products p ON sd.prod_code = p.prod_code
-                ORDER BY s.transaction_date DESC";
+                ORDER BY CONVERT_TZ(s.transaction_date, '+00:00', '+08:00') DESC";
 
                 $stmt = $conn->prepare($query);
                 $stmt->execute();
@@ -76,16 +82,16 @@ if (isset($_GET['action'])) {
                 // Date filter
                 switch($date_filter) {
                     case 'today':
-                        $where_clauses[] = "DATE(s.transaction_date) = CURDATE()";
+                        $where_clauses[] = "DATE(CONVERT_TZ(s.transaction_date, '+00:00', '+08:00')) = CURDATE()";
                         break;
                     case 'yesterday':
-                        $where_clauses[] = "DATE(s.transaction_date) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
+                        $where_clauses[] = "DATE(CONVERT_TZ(s.transaction_date, '+00:00', '+08:00')) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
                         break;
                     case 'last7days':
-                        $where_clauses[] = "s.transaction_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)";
+                        $where_clauses[] = "CONVERT_TZ(s.transaction_date, '+00:00', '+08:00') >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)";
                         break;
                     case 'last30days':
-                        $where_clauses[] = "s.transaction_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)";
+                        $where_clauses[] = "CONVERT_TZ(s.transaction_date, '+00:00', '+08:00') >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)";
                         break;
                 }
 
@@ -96,7 +102,7 @@ if (isset($_GET['action'])) {
                 }
 
                 $query = "SELECT 
-                    DATE_FORMAT(s.transaction_date, '%Y-%m-%d') as date,
+                    DATE_FORMAT(CONVERT_TZ(s.transaction_date, '+00:00', '+08:00'), '%Y-%m-%d') as date,
                     s.sale_id as order_id,
                     p.prod_name as product,
                     sd.quantity,
@@ -112,7 +118,7 @@ if (isset($_GET['action'])) {
                     $query .= " WHERE " . implode(" AND ", $where_clauses);
                 }
 
-                $query .= " ORDER BY s.transaction_date DESC";
+                $query .= " ORDER BY CONVERT_TZ(s.transaction_date, '+00:00', '+08:00') DESC";
 
                 $stmt = $conn->prepare($query);
                 foreach ($params as $key => $value) {
@@ -139,7 +145,7 @@ if (isset($_GET['action'])) {
                             SELECT CURDATE() - INTERVAL (a.a) DAY as date
                             FROM (SELECT 0 as a UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6) as a
                         ) dates
-                        LEFT JOIN sales s ON DATE(s.transaction_date) = dates.date
+                        LEFT JOIN sales s ON DATE(CONVERT_TZ(s.transaction_date, '+00:00', '+08:00')) = dates.date
                         LEFT JOIN salesdetails sd ON s.sale_id = sd.sale_id
                         GROUP BY dates.date
                         ORDER BY dates.date";
@@ -157,7 +163,7 @@ if (isset($_GET['action'])) {
                                   UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 
                                   UNION SELECT 9 UNION SELECT 10 UNION SELECT 11) as a
                         ) dates
-                        LEFT JOIN sales s ON WEEK(s.transaction_date) = WEEK(dates.date)
+                        LEFT JOIN sales s ON WEEK(CONVERT_TZ(s.transaction_date, '+00:00', '+08:00')) = WEEK(dates.date)
                         LEFT JOIN salesdetails sd ON s.sale_id = sd.sale_id
                         GROUP BY WEEK(dates.date)
                         ORDER BY dates.date";
@@ -175,8 +181,8 @@ if (isset($_GET['action'])) {
                                   UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 
                                   UNION SELECT 9 UNION SELECT 10 UNION SELECT 11) as a
                         ) dates
-                        LEFT JOIN sales s ON MONTH(s.transaction_date) = MONTH(dates.date) 
-                            AND YEAR(s.transaction_date) = YEAR(dates.date)
+                        LEFT JOIN sales s ON MONTH(CONVERT_TZ(s.transaction_date, '+00:00', '+08:00')) = MONTH(dates.date) 
+                            AND YEAR(CONVERT_TZ(s.transaction_date, '+00:00', '+08:00')) = YEAR(dates.date)
                         LEFT JOIN salesdetails sd ON s.sale_id = sd.sale_id
                         GROUP BY YEAR(dates.date), MONTH(dates.date)
                         ORDER BY dates.date";
@@ -192,7 +198,7 @@ if (isset($_GET['action'])) {
                             SELECT DATE_SUB(CURDATE(), INTERVAL (a.a) YEAR) as date
                             FROM (SELECT 0 as a UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4) as a
                         ) dates
-                        LEFT JOIN sales s ON YEAR(s.transaction_date) = YEAR(dates.date)
+                        LEFT JOIN sales s ON YEAR(CONVERT_TZ(s.transaction_date, '+00:00', '+08:00')) = YEAR(dates.date)
                         LEFT JOIN salesdetails sd ON s.sale_id = sd.sale_id
                         GROUP BY YEAR(dates.date)
                         ORDER BY dates.date";
@@ -212,11 +218,11 @@ if (isset($_GET['action'])) {
                     (SELECT COALESCE(SUM(sd2.quantity * sd2.unit_price), 0)
                      FROM sales s2
                      JOIN salesdetails sd2 ON s2.sale_id = sd2.sale_id
-                     WHERE DATE(s2.transaction_date) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                     WHERE DATE(CONVERT_TZ(s2.transaction_date, '+00:00', '+08:00')) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
                     ) as yesterday_sales
                 FROM sales s
                 JOIN salesdetails sd ON s.sale_id = sd.sale_id
-                WHERE DATE(s.transaction_date) = CURDATE()";
+                WHERE DATE(CONVERT_TZ(s.transaction_date, '+00:00', '+08:00')) = CURDATE()";
 
                 $stmt = $conn->prepare($query);
                 $stmt->execute();
@@ -231,12 +237,12 @@ if (isset($_GET['action'])) {
                     (SELECT COALESCE(SUM(sd1.quantity * sd1.unit_price), 0)
                      FROM sales s1
                      JOIN salesdetails sd1 ON s1.sale_id = sd1.sale_id
-                     WHERE s1.transaction_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                     WHERE CONVERT_TZ(s1.transaction_date, '+00:00', '+08:00') >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
                     ) as this_week,
                     (SELECT COALESCE(SUM(sd2.quantity * sd2.unit_price), 0)
                      FROM sales s2
                      JOIN salesdetails sd2 ON s2.sale_id = sd2.sale_id
-                     WHERE s2.transaction_date BETWEEN DATE_SUB(CURDATE(), INTERVAL 14 DAY) AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                     WHERE CONVERT_TZ(s2.transaction_date, '+00:00', '+08:00') BETWEEN DATE_SUB(CURDATE(), INTERVAL 14 DAY) AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)
                     ) as last_week";
 
                 $stmt = $conn->prepare($query);
@@ -252,12 +258,12 @@ if (isset($_GET['action'])) {
                     (SELECT COALESCE(SUM(sd1.quantity * sd1.unit_price), 0)
                      FROM sales s1
                      JOIN salesdetails sd1 ON s1.sale_id = sd1.sale_id
-                     WHERE s1.transaction_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+                     WHERE CONVERT_TZ(s1.transaction_date, '+00:00', '+08:00') >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
                     ) as this_month,
                     (SELECT COALESCE(SUM(sd2.quantity * sd2.unit_price), 0)
                      FROM sales s2
                      JOIN salesdetails sd2 ON s2.sale_id = sd2.sale_id
-                     WHERE s2.transaction_date BETWEEN DATE_SUB(CURDATE(), INTERVAL 60 DAY) AND DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+                     WHERE CONVERT_TZ(s2.transaction_date, '+00:00', '+08:00') BETWEEN DATE_SUB(CURDATE(), INTERVAL 60 DAY) AND DATE_SUB(CURDATE(), INTERVAL 30 DAY)
                     ) as last_month";
 
                 $stmt = $conn->prepare($query);
@@ -273,10 +279,10 @@ if (isset($_GET['action'])) {
                     COUNT(DISTINCT s.sale_id) as today_orders,
                     (SELECT COUNT(DISTINCT s2.sale_id)
                      FROM sales s2
-                     WHERE DATE(s2.transaction_date) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                     WHERE DATE(CONVERT_TZ(s2.transaction_date, '+00:00', '+08:00')) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
                     ) as yesterday_orders
                 FROM sales s
-                WHERE DATE(s.transaction_date) = CURDATE()";
+                WHERE DATE(CONVERT_TZ(s.transaction_date, '+00:00', '+08:00')) = CURDATE()";
 
                 $stmt = $conn->prepare($query);
                 $stmt->execute();
@@ -303,16 +309,16 @@ if (isset($_GET['action'])) {
                 $date_condition = '';
                 switch($date_filter) {
                     case 'today':
-                        $date_condition = "WHERE DATE(s.transaction_date) = CURDATE()";
+                        $date_condition = "WHERE DATE(CONVERT_TZ(s.transaction_date, '+00:00', '+08:00')) = CURDATE()";
                         break;
                     case 'yesterday':
-                        $date_condition = "WHERE DATE(s.transaction_date) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
+                        $date_condition = "WHERE DATE(CONVERT_TZ(s.transaction_date, '+00:00', '+08:00')) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
                         break;
                     case 'last7days':
-                        $date_condition = "WHERE s.transaction_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)";
+                        $date_condition = "WHERE CONVERT_TZ(s.transaction_date, '+00:00', '+08:00') >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)";
                         break;
                     case 'last30days':
-                        $date_condition = "WHERE s.transaction_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)";
+                        $date_condition = "WHERE CONVERT_TZ(s.transaction_date, '+00:00', '+08:00') >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)";
                         break;
                     default:
                         $date_condition = "";

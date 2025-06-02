@@ -300,6 +300,19 @@ $current_order = isset($_GET['order']) ? $_GET['order'] : 'ASC';
     <script src="../../JavaScript/ADMIN/adminInventory.js?v=<?php echo time(); ?>" defer></script>
     <title>Admin Inventory</title>
     <link rel="icon" href="../../pics/logo.png" sizes="any">
+    <style>
+        .out-of-stock {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        .out-of-stock td {
+            opacity: 0.8;
+        }
+        .stock-warning {
+            color: #c62828;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body <?php if ($has_message): ?>data-message="<?php echo htmlspecialchars($message); ?>" data-success="<?php echo $success ? 'true' : 'false'; ?>"<?php endif; ?>>
 
@@ -429,11 +442,14 @@ $current_order = isset($_GET['order']) ? $_GET['order'] : 'ASC';
                         </thead>
                             <tbody id="productTableBody">
                                 <?php foreach ($products as $product): ?>
-                                <tr class="clickable-row" onclick="showProductDetails('<?= htmlspecialchars($product['prod_code']) ?>')">
+                                <tr class="clickable-row <?= $product['stock_atty'] <= 0 ? 'out-of-stock' : '' ?>" onclick="showProductDetails('<?= htmlspecialchars($product['prod_code']) ?>')">
                                     <td><?= htmlspecialchars($product['prod_code']) ?></td>
                                     <td><?= htmlspecialchars($product['prod_name']) ?></td>
                                     <td>₱<?= number_format($product['prod_price'], 2) ?></td>
-                                    <td><?= htmlspecialchars($product['stock_atty']) ?></td>
+                                    <td class="<?= $product['stock_atty'] <= 0 ? 'stock-warning' : '' ?>">
+                                        <?= htmlspecialchars($product['stock_atty']) ?>
+                                        <?= $product['stock_atty'] <= 0 ? ' (Out of Stock)' : '' ?>
+                                    </td>
                                     <td><?= htmlspecialchars($product['category_type']) ?></td>
                                     <td><?= htmlspecialchars($product['stock_unit']) ?></td>
                                 </tr>
@@ -603,12 +619,6 @@ $current_order = isset($_GET['order']) ? $_GET['order'] : 'ASC';
                             <button type="button" class="close-btn" onclick="closeDeleteProductForm()">&times;</button>
                         </div>
                         <div class="form-section">
-                            <div class="image-upload-container">
-                                <div class="circular-image-upload">
-                                    <img id="delete_preview_image" src="../../pics/admin_icons/inventory.png" alt="Product Image">
-                                </div>
-                            </div>
-
                             <h3>Product Information</h3>
                             
                             <div class="form-group">
@@ -620,6 +630,12 @@ $current_order = isset($_GET['order']) ? $_GET['order'] : 'ASC';
                             </div>
 
                             <div id="delete-form-fields" style="display: none;">
+                                <div class="image-upload-container">
+                                    <div class="circular-image-upload">
+                                        <img id="delete_preview_image" src="../../pics/admin_icons/inventory.png" alt="Product Image">
+                                    </div>
+                                </div>
+
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label>Name</label>

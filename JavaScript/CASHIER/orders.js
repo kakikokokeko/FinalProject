@@ -141,9 +141,10 @@ function fetchOrderHistory(filter = 'today') {
 
                 data.data.forEach(order => {
                     const row = document.createElement('tr');
-                    const date = new Date(order.transaction_date);
+                    const date = new Date(order.transaction_date + ' UTC'); // Add UTC to handle server time
+                    const formattedDate = formatDate(date);
                     row.innerHTML = `
-                        <td>${date.toLocaleString()}</td>
+                        <td>${formattedDate}</td>
                         <td>${order.sale_id}</td>
                         <td>₱${parseFloat(order.total_amount).toFixed(2)}</td>
                         <td>
@@ -171,10 +172,11 @@ function showOrderDetails(orderId) {
                 const details = data.data;
                 if (details.length > 0) {
                     const firstItem = details[0];
+                    const date = new Date(firstItem.transaction_date + ' UTC'); // Add UTC to handle server time
                     
                     // Set order info
                     document.getElementById('detailOrderId').textContent = firstItem.sale_id;
-                    document.getElementById('detailDate').textContent = new Date(firstItem.transaction_date).toLocaleString();
+                    document.getElementById('detailDate').textContent = formatDate(date);
                     document.getElementById('detailCashier').textContent = firstItem.cashier_name;
                     document.getElementById('detailTotal').textContent = `₱${parseFloat(firstItem.total_amount).toFixed(2)}`;
                     document.getElementById('detailCash').textContent = `₱${parseFloat(firstItem.cash_amount).toFixed(2)}`;
@@ -197,6 +199,8 @@ function showOrderDetails(orderId) {
 
                     // Show the modal
                     document.getElementById('orderDetailsModal').style.display = 'flex';
+                } else {
+                    alert('No details found for this order');
                 }
             } else {
                 alert('Error loading order details: ' + data.message);
@@ -206,4 +210,18 @@ function showOrderDetails(orderId) {
             console.error('Error:', error);
             alert('Error loading order details');
         });
+}
+
+// Helper function to format date
+function formatDate(date) {
+    const options = {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    };
+    return date.toLocaleString('en-US', options);
 } 

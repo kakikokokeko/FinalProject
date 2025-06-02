@@ -16,6 +16,7 @@ try {
     $stmt = $conn->query("SELECT p.*, c.category_type 
                          FROM products p 
                          LEFT JOIN category c ON p.category_code = c.category_code 
+                         WHERE p.stock_atty > 0 AND p.status = 'active'
                          ORDER BY p.prod_name");
     $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch(PDOException $e) {
@@ -150,7 +151,8 @@ try {
                             data-category="<?= strtolower($product['category_type']) ?>"
                             data-price="<?= $product['prod_price'] ?>"
                             data-unit="<?= $product['stock_unit'] ?>"
-                            data-code="<?= $product['prod_code'] ?>">
+                            data-code="<?= $product['prod_code'] ?>"
+                            data-stock="<?= $product['stock_atty'] ?>">
                         <div class="product_img">
                             <img src="../../<?= $product['image_path'] ?: 'pics/admin_icons/inventory.png' ?>" 
                                  alt="<?= htmlspecialchars($product['prod_name']) ?>" 

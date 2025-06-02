@@ -170,7 +170,6 @@ function closeDeleteProductForm() {
     document.getElementById('deleteProductPopup').style.display = 'none';
     document.getElementById('delete_prod_code').value = '';
     document.getElementById('delete-form-fields').style.display = 'none';
-    document.getElementById('delete_preview_image').src = '../../pics/admin_icons/inventory.png';
 }
 
 function searchProductForDeletion() {
@@ -205,7 +204,14 @@ function searchProductForDeletion() {
                 const data = response.data;
                 
                 const previewImage = document.getElementById('delete_preview_image');
-                previewImage.src = data.image_path ? '../../' + data.image_path : '../../pics/admin_icons/inventory.png';
+                if (data.image_path) {
+                    previewImage.src = '../../' + data.image_path;
+                    previewImage.onerror = function() {
+                        this.src = '../../pics/admin_icons/inventory.png';
+                    };
+                } else {
+                    previewImage.src = '../../pics/admin_icons/inventory.png';
+                }
 
                 document.getElementById('delete_prod_name').value = data.prod_name;
                 document.getElementById('delete_prod_price').value = '₱' + parseFloat(data.prod_price).toFixed(2);
@@ -243,13 +249,22 @@ function closeDeleteConfirmation() {
 }
 
 function deleteProduct() {
-    const prodCode = document.getElementById('delete_details_prod_code').textContent;
+    const prodCode = document.getElementById('delete_prod_code').value;
+    if (!prodCode) {
+        alert('Please enter a product code');
+        return;
+    }
+
+    if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+        return;
+    }
+
     const formData = new FormData();
     formData.append('action', 'delete');
     formData.append('prod_code', prodCode);
 
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', 'Inventory.php', true);
+    xhr.open('POST', window.location.href, true);
     
     xhr.onload = function() {
         if (this.status === 200) {
@@ -257,15 +272,20 @@ function deleteProduct() {
                 const response = JSON.parse(this.responseText);
                 alert(response.message);
                 if (response.success) {
-                    document.getElementById('deleteConfirmationModal').style.display = 'none';
-                    document.getElementById('deleteProductPopup').style.display = 'none';
+                    closeDeleteProductForm();
                     window.location.reload();
                 }
             } catch (e) {
                 alert('Error processing response');
                 console.error(e);
             }
+        } else {
+            alert('Error: Server returned status ' + this.status);
         }
+    };
+    
+    xhr.onerror = function() {
+        alert('Error: Could not connect to the server');
     };
     
     xhr.send(formData);
@@ -274,6 +294,8 @@ function deleteProduct() {
 function deleteProd() {
     document.getElementById('deleteProductPopup').style.display = 'flex';
     document.getElementById('delete_prod_code').value = '';
+    document.getElementById('delete-form-fields').style.display = 'none';
+    document.getElementById('delete_preview_image').src = '../../pics/admin_icons/inventory.png';
 }
 
 function initializeImageUpload() {

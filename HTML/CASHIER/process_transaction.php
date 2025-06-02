@@ -3,6 +3,9 @@ session_start();
 include("../../HTML/LOGIN/database_config.php");
 header('Content-Type: application/json');
 
+// Set timezone to Asia/Manila (Philippines)
+date_default_timezone_set('Asia/Manila');
+
 // Check if user is logged in
 if (!isset($_SESSION['acc_code']) || $_SESSION['acc_position'] !== 'Cashier') {
     echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
@@ -21,10 +24,14 @@ if (!$data) {
 try {
     $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
+    // Set timezone for database connection
+    $conn->exec("SET time_zone = '+08:00'");
+    
     $conn->beginTransaction();
 
-    // Insert into Sales table
-    $stmt = $conn->prepare("INSERT INTO sales (cashier_code, total_amount, cash_amount, change_amount, transaction_date) VALUES (?, ?, ?, ?, NOW())");
+    // Insert into Sales table with explicit timezone
+    $stmt = $conn->prepare("INSERT INTO sales (cashier_code, total_amount, cash_amount, change_amount, transaction_date) VALUES (?, ?, ?, ?, CONVERT_TZ(NOW(), 'SYSTEM', '+08:00'))");
     $stmt->execute([$_SESSION['acc_code'], $data['total_amount'], $data['cash_amount'], $data['change_amount']]);
     $saleId = $conn->lastInsertId();
 

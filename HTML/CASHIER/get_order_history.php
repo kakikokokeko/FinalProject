@@ -3,6 +3,9 @@ session_start();
 include("../../HTML/LOGIN/database_config.php");
 header('Content-Type: application/json');
 
+// Set timezone to Asia/Manila (Philippines)
+date_default_timezone_set('Asia/Manila');
+
 // Check if user is logged in
 if (!isset($_SESSION['acc_code']) || $_SESSION['acc_position'] !== 'Cashier') {
     echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
@@ -12,6 +15,9 @@ if (!isset($_SESSION['acc_code']) || $_SESSION['acc_position'] !== 'Cashier') {
 try {
     $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
+    // Set timezone for database connection
+    $conn->exec("SET time_zone = '+08:00'");
 
     if (isset($_GET['order_id'])) {
         // Fetch specific order details
@@ -53,13 +59,13 @@ try {
         if (isset($_GET['filter'])) {
             switch ($_GET['filter']) {
                 case 'today':
-                    $whereClause = "WHERE DATE(s.transaction_date) = CURDATE()";
+                    $whereClause = "WHERE DATE(CONVERT_TZ(s.transaction_date, '+00:00', '+08:00')) = CURDATE()";
                     break;
                 case 'week':
-                    $whereClause = "WHERE YEARWEEK(s.transaction_date) = YEARWEEK(CURDATE())";
+                    $whereClause = "WHERE YEARWEEK(CONVERT_TZ(s.transaction_date, '+00:00', '+08:00')) = YEARWEEK(CURDATE())";
                     break;
                 case 'month':
-                    $whereClause = "WHERE YEAR(s.transaction_date) = YEAR(CURDATE()) AND MONTH(s.transaction_date) = MONTH(CURDATE())";
+                    $whereClause = "WHERE YEAR(CONVERT_TZ(s.transaction_date, '+00:00', '+08:00')) = YEAR(CURDATE()) AND MONTH(CONVERT_TZ(s.transaction_date, '+00:00', '+08:00')) = MONTH(CURDATE())";
                     break;
                 default:
                     $whereClause = "";
