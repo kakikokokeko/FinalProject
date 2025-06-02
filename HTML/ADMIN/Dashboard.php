@@ -38,10 +38,16 @@
 	<?php
 	include("../../HTML/LOGIN/database_config.php");
 	
+	// Set timezone to Asia/Manila (Philippines)
+	date_default_timezone_set('Asia/Manila');
+	
 	try {
 		// Create database connection
 		$conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
 		$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+		
+		// Set timezone for database connection
+		$conn->exec("SET time_zone = '+08:00'");
 
 		// Debug connection
 		echo "<!-- Database connected successfully -->";
@@ -52,11 +58,11 @@
 		$salesCount = $checkStmt->fetch(PDO::FETCH_ASSOC)['count'];
 		echo "<!-- Total sales records: " . $salesCount . " -->";
 
-		// Check Products table
-		$checkQuery = "SELECT COUNT(*) as count FROM products";
+		// Check Products table - only count active products
+		$checkQuery = "SELECT COUNT(*) as count FROM products WHERE status = 'active'";
 		$checkStmt = $conn->query($checkQuery);
 		$productsCount = $checkStmt->fetch(PDO::FETCH_ASSOC)['count'];
-		echo "<!-- Total products: " . $productsCount . " -->";
+		echo "<!-- Total active products: " . $productsCount . " -->";
 
 		// Check Categories table
 		$checkQuery = "SELECT COUNT(*) as count FROM category";
@@ -70,7 +76,10 @@
 		$accountsCount = $checkStmt->fetch(PDO::FETCH_ASSOC)['count'] ?? 0;
 
 		// Get total sales amount (only for today)
-		$salesAmountQuery = "SELECT SUM(total_amount) as total FROM sales WHERE DATE(transaction_date) = CURDATE()";
+		$salesAmountQuery = "SELECT COALESCE(SUM(sd.quantity * sd.unit_price), 0) as total 
+							FROM sales s 
+							JOIN salesdetails sd ON s.sale_id = sd.sale_id 
+							WHERE DATE(CONVERT_TZ(s.transaction_date, '+00:00', '+08:00')) = CURDATE()";
 		$salesAmountStmt = $conn->query($salesAmountQuery);
 		$totalSales = $salesAmountStmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
@@ -84,14 +93,21 @@
 		LEFT JOIN sales s ON sd.sale_id = s.sale_id
 		WHERE 1=1";
 
-		// Add date filtering if dates are set
-		if (isset($_GET['start_date']) && !empty($_GET['start_date'])) {
-			$start_date = $_GET['start_date'];
-			$query .= " AND DATE(s.transaction_date) >= :start_date";
-		}
-		if (isset($_GET['end_date']) && !empty($_GET['end_date'])) {
-			$end_date = $_GET['end_date'];
-			$query .= " AND DATE(s.transaction_date) <= :end_date";
+		// Add date filtering based on selected filter
+		$filter = isset($_GET['filter']) ? $_GET['filter'] : 'last7days';
+		switch($filter) {
+			case 'today':
+				$query .= " AND DATE(CONVERT_TZ(s.transaction_date, '+00:00', '+08:00')) = CURDATE()";
+				break;
+			case 'last7days':
+				$query .= " AND CONVERT_TZ(s.transaction_date, '+00:00', '+08:00') >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)";
+				break;
+			case 'last30days':
+				$query .= " AND CONVERT_TZ(s.transaction_date, '+00:00', '+08:00') >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)";
+				break;
+			case 'last90days':
+				$query .= " AND CONVERT_TZ(s.transaction_date, '+00:00', '+08:00') >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)";
+				break;
 		}
 
 		$query .= " GROUP BY c.category_code, c.category_type
@@ -99,14 +115,6 @@
 				   ORDER BY total_quantity DESC";
 
 		$stmt = $conn->prepare($query);
-		
-		// Bind date parameters if they exist
-		if (isset($start_date)) {
-			$stmt->bindParam(':start_date', $start_date);
-		}
-		if (isset($end_date)) {
-			$stmt->bindParam(':end_date', $end_date);
-		}
 		
 		$stmt->execute();
 		
